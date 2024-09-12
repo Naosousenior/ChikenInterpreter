@@ -1,0 +1,67 @@
+var numero = 1; "double"
+var string = 'texto'; "string"
+
+var lista = [1,2];
+var dict = {'aud': 200};
+dict['aud'];
+dict[2];
+
+var funcao = fun (var c) ("parametros"){
+    "codigo"
+}
+
+var Classe = class (Classes1,Classe2){
+    obj (
+        attrb1;
+    );
+
+    var fucao = fun (var obj) (){
+
+    }
+
+    var soma(var x, var y){
+        Classes1.soma(x,y);
+        "codigo"
+    }
+
+    var funcao = fun (){
+
+    }
+}
+
+if("condicao"){
+    "codigo"
+}else if(){
+
+}
+
+switch(operador){
+    case valor{
+
+    }
+    default{
+
+    }
+}
+
+while("condicao")
+before{
+
+}
+after{
+
+}final{
+
+}
+
+iter(var c : lista){
+
+}
+
+try{
+    codigo
+    err 11;
+    err 12;
+}except (var error){
+
+}
