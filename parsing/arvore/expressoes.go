@@ -317,11 +317,9 @@ func (em *ExpressaoDict) GetInformacao() string {
 
 // Expressao de objeto:
 type ExpressaoObjeto struct {
-	Token               lex.Token
-	AtributosPublicos   map[string]Expressao
-	AtributosProtegidos map[string]Expressao
-	AtributosPrivados   map[string]Expressao
-	Profu               int
+	Token     lex.Token
+	Atributos map[string]Expressao
+	Profu     int
 }
 
 func (eo *ExpressaoObjeto) noExpressao()          {}
@@ -329,29 +327,12 @@ func (eo *ExpressaoObjeto) IncProfu()             { eo.Profu++ }
 func (eo *ExpressaoObjeto) GetTokenNo() lex.Token { return eo.Token }
 func (eo *ExpressaoObjeto) GetInformacao() string {
 	indent := ferramentas.GetIdentacao(eo.Profu)
-	parts := make([]string, 4+len(eo.AtributosPublicos)+len(eo.AtributosPrivados)+len(eo.AtributosProtegidos))
-	i := 2
+	parts := make([]string, 1+len(eo.Atributos))
+	i := 1
 
 	parts[0] = indent + "Expressao OBJECT. Propriedades:"
-	parts[1] = indent + "Publicos:"
 
-	for chave, valor := range eo.AtributosPublicos {
-		parts[i] = fmt.Sprintf("%s'%s':\n%s", indent, chave, valor.GetInformacao())
-		i++
-	}
-
-	parts[i] = indent + "Protegidos:"
-	i++
-
-	for chave, valor := range eo.AtributosProtegidos {
-		parts[i] = fmt.Sprintf("%s'%s':\n%s", indent, chave, valor.GetInformacao())
-		i++
-	}
-
-	parts[i] = indent + "Privados:"
-	i++
-
-	for chave, valor := range eo.AtributosPrivados {
+	for chave, valor := range eo.Atributos {
 		parts[i] = fmt.Sprintf("%s'%s':\n%s", indent, chave, valor.GetInformacao())
 		i++
 	}

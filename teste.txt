@@ -1,14 +1,14 @@
 var pessoa = object {
-    public
+    
     nome: 'Adolfo',
     idade: 19,
-    amigos: ['Ninguem','ninguem de novo', 'vazio','nADA']
+    amigos: ['Ninguem','ninguem de novo', 'vazio','nADA'],
     
-    protected
+    
     peso: 102.4,
-    needs: 0
+    needs: 0,
 
-    public
+    
     pensar: fun(problemas) {
         if (problemas) {
             object.needs += 1;
@@ -21,10 +21,9 @@ var carro = object {
     cor: 'vermelho',
     numChassi: 2,
 
-    protected
+    
     chave: true,
-    pessoa: pessoa
+    pessoa: pessoa,
 
-    public
     pessoa: fun(){return object.pessoa;}
 };

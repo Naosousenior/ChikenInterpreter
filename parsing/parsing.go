@@ -991,69 +991,36 @@ func (a *Analisador) parseExpressaoObjeto() (arv.Expressao, bool) {
 		return &arv.ChamadaObjeto{Token: a.Atual, Profu: a.profu}, true
 	} else {
 		exprObjeto := &arv.ExpressaoObjeto{Token: a.Atual, Profu: a.profu}
-		exprObjeto.AtributosPublicos = make(map[string]arv.Expressao)
-		exprObjeto.AtributosProtegidos = make(map[string]arv.Expressao)
-		exprObjeto.AtributosPrivados = make(map[string]arv.Expressao)
-		leveis := map[lex.TipoToken]int{
-			lex.PUBLICO:   1,
-			lex.PROTEGIDO: 2,
-			lex.PRIVADO:   3,
-		}
-
-		var nivelProtecao int
-		var nomeAtrib string
-		var exprAtrib arv.Expressao
-		var ok bool
-
+		exprObjeto.Atributos = make(map[string]arv.Expressao)
+		
 		a.avancaToken()
 
-		if a.testaProximoToken(lex.FECHA_CHAVE) {
-			a.avancaToken()
-			return exprObjeto, true
-		}
+		for !a.testaProximoToken(lex.FECHA_CHAVE){
+			if a.esperaToken(lex.IDENTIFICADOR) {
+				nomeAtrib := a.Atual.Valor
 
-		nivelProtecao = 1
-		for {
-			if a.testaProximoToken(lex.IDENTIFICADOR) {
-				a.avancaToken()
-			} else if a.testaProximoToken(lex.VIRGULA) {
-				a.avancaToken()
-				continue
-			} else {
-				nivelProtecao = leveis[a.Proximo.Tipo]
-				if nivelProtecao < 1 || nivelProtecao > 3 {
-					break
+				if !a.esperaToken(lex.DOIS_PONTO) {
+					return nil,false
 				}
 
 				a.avancaToken()
-				continue
-			}
+				expressao,ok := a.parseExpressao(MENOR)
 
-			nomeAtrib = a.Atual.Valor
-			if !a.esperaToken(lex.DOIS_PONTO) {
-				return nil, false
-			}
-			a.avancaToken()
-			exprAtrib, ok = a.parseExpressao(MENOR)
+				if !ok {
+					return nil,false
+				}
 
-			if !ok {
-				return nil, false
-			}
+				exprObjeto.Atributos[nomeAtrib] = expressao
 
-			switch nivelProtecao {
-			case 1:
-				exprObjeto.AtributosPublicos[nomeAtrib] = exprAtrib
-			case 2:
-				exprObjeto.AtributosProtegidos[nomeAtrib] = exprAtrib
-			case 3:
-				exprObjeto.AtributosPrivados[nomeAtrib] = exprAtrib
+				if a.testaProximoToken(lex.VIRGULA){
+					a.avancaToken()
+				}
+			} else {
+				return nil,false
 			}
-
 		}
 
-		if !a.esperaToken(lex.FECHA_CHAVE) {
-			return nil, false
-		}
+		a.avancaToken()
 
 		return exprObjeto, true
 	}

@@ -148,7 +148,7 @@ func LerArquivo(file string) string {
 
 func main() {
 
-	//ModoInterativo()
+	ModoInterativo()
 
 	texto := LerArquivo("teste.txt")
 

@@ -23,7 +23,7 @@ func chamaFuncao(funcao *obj.ObjFuncao, argumentos []obj.ObjetoBase) obj.ObjetoB
 }
 
 func chamaMetodo(funcao *obj.ObjFuncao,ambiente *obj.Ambiente) obj.ObjetoBase{
-	fmt.Println(ambiente.Objeto.Protegidos)
+	//fmt.Println(ambiente.Objeto.Protegidos)
 	resultado := avaliaInstrucoes(funcao.BlocoInstrucoes.Instrucoes, ambiente)
 
 	if retorno, ok := resultado.(*obj.ObjReturn); ok {
@@ -157,7 +157,7 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 
 	constroiObjeto(novoObjeto,CLASSMAE)
 
-	for propriedade, exprV := range expressao.AtributosPublicos {
+	for propriedade, exprV := range expressao.Atributos {
 		valor = Avaliar(exprV,ambiente)
 
 		if valor.Tipo() == obj.ERRO {
@@ -176,49 +176,6 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 		}
 
 		novoObjeto.Publicas[propriedade] = valor
-	}
-
-	for propriedade, exprV := range expressao.AtributosProtegidos {
-		valor = Avaliar(exprV,ambiente)
-
-		if valor.Tipo() == obj.ERRO {
-			return nil, valor
-		}
-
-		if valor.Tipo() == obj.FUNCAO_OBJ {
-			funcao,_ := valor.(*obj.ObjFuncao)
-			params := make([]string,len(funcao.Parametros))
-
-			for i,text := range funcao.Parametros{
-				params[i] = text.Nome
-			}
-
-			valor = &obj.Metodo{Classe: ambiente.Classe,Funcao: funcao,Parametros: params}
-		}
-
-		novoObjeto.Protegidos[propriedade] = valor
-	}
-
-	for propriedade, exprV := range expressao.AtributosPrivados {
-		valor = Avaliar(exprV,ambiente)
-
-		if valor.Tipo() == obj.ERRO {
-			return nil, valor
-		}
-
-		if valor.Tipo() == obj.FUNCAO_OBJ {
-			funcao,_ := valor.(*obj.ObjFuncao)
-			params := make([]string,len(funcao.Parametros))
-
-			for i,text := range funcao.Parametros{
-				params[i] = text.Nome
-			}
-
-			valor = &obj.Metodo{Classe: ambiente.Classe,Funcao: funcao,Parametros: params}
-		}
-		novoObjeto.Privadas[ambiente.Classe] = make(obj.Propriedade)
-
-		novoObjeto.Privadas[ambiente.Classe][propriedade] = valor
 	}
 
 	return novoObjeto,nil
