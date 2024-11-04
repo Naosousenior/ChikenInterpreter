@@ -342,30 +342,29 @@ func (eo *ExpressaoObjeto) GetInformacao() string {
 
 type ExpressaoClass struct {
 	Token          lex.Token
-	Objeto         *ExpressaoObjeto
 	SuperClasses   []Expressao
-	AtributosObj   map[string]Expressao
-	AtributosClass map[string]Expressao
+	AtribPub map[string]Expressao
+	AtribPro map[string] Expressao
+	AtribPriv map[string]Expressao
+	AtribClass map[string]Expressao
 
 	Profu int
 }
-
-func (ec *ExpressaoClass) SetAtribObj(nome string, valor Expressao) {
-	ec.AtributosObj[nome] = valor
-}
-func (ec *ExpressaoClass) SetAtribClass(nome string, valor Expressao) {
-	ec.AtributosClass[nome] = valor
-}
 func (ec *ExpressaoClass) noExpressao() {}
 func (ec *ExpressaoClass) IncProfu() {
-	ec.Objeto.IncProfu()
 
-	for _, expr := range ec.AtributosObj {
-		expr.IncProfu()
+	for _,i := range ec.AtribPub {
+		i.IncProfu()
 	}
 
-	for _, expr := range ec.AtributosClass {
-		expr.IncProfu()
+	for _,i := range ec.AtribPro {
+		i.IncProfu()
+	}
+	for _,i := range ec.AtribPriv {
+		i.IncProfu()
+	}
+	for _,i := range ec.AtribClass {
+		i.IncProfu()
 	}
 
 	ec.Profu++
@@ -376,41 +375,34 @@ func (ec *ExpressaoClass) GetTokenNo() lex.Token {
 
 func (ec *ExpressaoClass) GetInformacao() string {
 	indent := ferramentas.GetIdentacao(ec.Profu)
-	parts := make([]string, len(ec.AtributosClass)+len(ec.AtributosObj)+6)
-	var i int = 5
+	parts := make([]string, len(ec.AtribClass)+len(ec.AtribPriv)+len(ec.AtribPro)+len(ec.AtribPub)+5)
+	i := 2
 
-	parts[0] = indent + "Expressao de classe."
+	parts[0] = indent+"Expressao CLASS. Propriedades:"
 
-	if ec.Objeto != nil {
-		parts[1] = indent + "    Objeto:\n" + ec.Objeto.GetInformacao()
-	}
-
-	parts[2] = fmt.Sprintf(indent+"    Número de SuperClases: %d", len(ec.SuperClasses))
-
-	parts[4] = indent + "Atributos do Objeto:"
-
-	for nome, valor := range ec.AtributosObj {
-		parts[i] = fmt.Sprintf(indent+"    '%s'. Expressao:\n%s", nome, valor.GetInformacao())
+	parts[1] = indent+"Propriedades publicas:"
+	for chave,valor := range ec.AtribPub {
+		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
 		i++
 	}
 
-	parts[i] = indent + "Atributos de classe:"
-	i++
-
-	for nome, valor := range ec.AtributosClass {
-		parts[i] = fmt.Sprintf(indent+"    '%s'. Expressao:\n%s", nome, valor.GetInformacao())
+	parts[i] = indent+"Propriedades privadas:"
+	for chave,valor := range ec.AtribPriv {
+		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
+		i++
+	}
+	parts[i] = indent+"Propriedades protegidas:"
+	for chave,valor := range ec.AtribPro {
+		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
+		i++
+	}
+	parts[i] = indent+"Propriedades de classe:"
+	for chave,valor := range ec.AtribClass {
+		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
 		i++
 	}
 
 	return strings.Join(parts, "\n")
-}
-
-func NewExpressaoClass(token lex.Token, profu int) *ExpressaoClass {
-	novaExpre := &ExpressaoClass{Token: token, Profu: profu}
-	novaExpre.AtributosObj = make(map[string]Expressao)
-	novaExpre.AtributosClass = make(map[string]Expressao)
-
-	return novaExpre
 }
 
 // Expressoes simples:
