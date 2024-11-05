@@ -992,31 +992,31 @@ func (a *Analisador) parseExpressaoObjeto() (arv.Expressao, bool) {
 	} else {
 		exprObjeto := &arv.ExpressaoObjeto{Token: a.Atual, Profu: a.profu}
 		exprObjeto.Atributos = make(map[string]arv.Expressao)
-		
+
 		a.avancaToken()
 
-		for !a.testaProximoToken(lex.FECHA_CHAVE){
+		for !a.testaProximoToken(lex.FECHA_CHAVE) {
 			if a.esperaToken(lex.IDENTIFICADOR) {
 				nomeAtrib := a.Atual.Valor
 
 				if !a.esperaToken(lex.DOIS_PONTO) {
-					return nil,false
+					return nil, false
 				}
 
 				a.avancaToken()
-				expressao,ok := a.parseExpressao(MENOR)
+				expressao, ok := a.parseExpressao(MENOR)
 
 				if !ok {
-					return nil,false
+					return nil, false
 				}
 
 				exprObjeto.Atributos[nomeAtrib] = expressao
 
-				if a.testaProximoToken(lex.VIRGULA){
+				if a.testaProximoToken(lex.VIRGULA) {
 					a.avancaToken()
 				}
 			} else {
-				return nil,false
+				return nil, false
 			}
 		}
 
@@ -1028,26 +1028,29 @@ func (a *Analisador) parseExpressaoObjeto() (arv.Expressao, bool) {
 }
 
 func (a *Analisador) parseExpressaoClass() (arv.Expressao, bool) {
-	exprClass := arv.NewExpressaoClass(a.Atual, a.profu)
-	exprClass.SuperClasses = make([]arv.Expressao, 0)
-	a.profu++
+	//definindo os elementos do objeto de expressao
+	expreClass := &arv.ExpressaoClass{
+		Token:      a.Atual,
+		AtribPub:   make(map[string]arv.Expressao),
+		AtribPriv:  make(map[string]arv.Expressao),
+		AtribPro:   make(map[string]arv.Expressao),
+		AtribClass: make(map[string]arv.Expressao),
+	}
 
+	//verificamos se ha parenteses
+	//se houver, significa que devemos declarar as super classes
 	if a.testaProximoToken(lex.ABRE_PARENTESES) {
 		a.avancaToken()
 
-		for !a.testaProximoToken(lex.FECHA_PARENTESES) {
-			a.avancaToken()
+		//se for apenas um abre fecha chave, somente continua de forma normal
+		if !a.testaProximoToken(lex.FECHA_PARENTESES) {
+			filaSupers := a.getSupersClasse()
 
-			expressao,ok := a.parseExpressao(MENOR)
-			if !ok {
-				return nil,false
+			if filaSupers == nil {
+				return nil, false
 			}
 
-			exprClass.SuperClasses = append(exprClass.SuperClasses, expressao)
-
-			if a.testaProximoToken(lex.VIRGULA) {
-				a.avancaToken()
-			}
+			expreClass.SuperClasses = aux.GetLista(filaSupers)
 		}
 
 		a.avancaToken()
@@ -1057,91 +1060,88 @@ func (a *Analisador) parseExpressaoClass() (arv.Expressao, bool) {
 		return nil, false
 	}
 
-	if !a.testaProximoToken(lex.FECHA_CHAVE) {
-		ok := a.parsePropriedadesClasse(exprClass)
-		if !ok {
-			return nil, false
-		}
+	if a.testaProximoToken(lex.FECHA_CHAVE) {
+		return expreClass, true
 	}
 
-	a.avancaToken()
-
-	return exprClass, true
-}
-
-func (a *Analisador) parsePropriedadesClasse(expressaoClass *arv.ExpressaoClass) bool {
+	//e aqui que comeca a putaria!
+	leveis := map[lex.TipoToken]int{
+		lex.PUBLICO:   1,
+		lex.PROTEGIDO: 2,
+		lex.PRIVADO:   3,
+		lex.CLASS:     4,
+	}
+	var nivelProtecao int = 1
+	var nomeAtrib string
+	var exprAtrib arv.Expressao
 	var ok bool
-	var nome string
-	var expressao arv.Expressao
 
-	for !a.testaProximoToken(lex.FECHA_CHAVE) {
-		a.avancaToken()
-
-		switch a.Atual.Tipo {
-		case lex.OBJECT:
-			if a.testaProximoToken(lex.PONTO) {
-				a.avancaToken()
-				if !a.esperaToken(lex.IDENTIFICADOR) {
-					a.addErro("Declare propriedades de objetos ou de classes")
-					return false
-				}
-
-				nome = a.Atual.Valor
-
-				if !a.esperaToken(lex.RECEBE) {
-					return false
-				}
-
-				a.avancaToken()
-
-				expressao, ok = a.parseExpressao(MENOR)
-
-				if !ok {
-					return false
-				}
-
-				expressaoClass.SetAtribObj(nome, expressao)
-
-			} else {
-				objeto, ok := a.parseExpressaoObjeto()
-
-				if !ok {
-					return false
-				}
-
-				expressaoClass.Objeto = objeto.(*arv.ExpressaoObjeto)
-			}
-
-		case lex.IDENTIFICADOR:
-
-			nome = a.Atual.Valor
-
-			if !a.esperaToken(lex.RECEBE) {
-				a.addErro(a.Atual.Valor)
-				return false
+	for {
+		if a.testaProximoToken(lex.IDENTIFICADOR) {
+			a.avancaToken()
+		} else if a.testaProximoToken(lex.VIRGULA) {
+			a.avancaToken()
+			continue
+		} else {
+			nivelProtecao = leveis[a.Proximo.Tipo]
+			if nivelProtecao < 1 || nivelProtecao > 4 {
+				break
 			}
 
 			a.avancaToken()
-
-			expressao, ok = a.parseExpressao(MENOR)
-
-			if !ok {
-				return false
-			}
-
-			expressaoClass.SetAtribClass(nome, expressao)
-
-		default:
-			a.addErro(fmt.Sprintf("A expressao %s nao se encaixa no contexto de declaração de classe", a.Atual.Tipo))
-			return false
+			continue
 		}
 
-		if !a.esperaToken(lex.PONTO_VIRGULA) {
-			break
+		nomeAtrib = a.Atual.Valor
+		exprAtrib, ok = a.parseExpressao(MENOR)
+
+		if !ok {
+			return nil, false
+		}
+
+		switch nivelProtecao {
+		case 1:
+			expreClass.AtribPub[nomeAtrib] = exprAtrib
+		case 2:
+			expreClass.AtribPro[nomeAtrib] = exprAtrib
+		case 3:
+			expreClass.AtribPriv[nomeAtrib] = exprAtrib
+		case 4:
+			expreClass.AtribClass[nomeAtrib] = exprAtrib
 		}
 	}
 
-	return true
+	if a.esperaToken(lex.FECHA_CHAVE) {
+		return expreClass, true
+	}
+
+	return nil, false
+}
+
+func (a *Analisador) getSupersClasse() *aux.FilaExpressoes {
+	fila := aux.NewFilaExpressoes()
+
+	for {
+		a.avancaToken()
+		expressao, ok := a.parseExpressao(MENOR)
+
+		if !ok {
+			return nil
+		}
+
+		fila.AddItem(expressao)
+
+		if a.testaProximoToken(lex.VIRGULA) {
+			a.avancaToken()
+		} else if a.testaProximoToken(lex.FECHA_PARENTESES) {
+			break
+		} else {
+			a.addErro(fmt.Sprintf("Token %s inesperado ou desconhecido", a.Proximo.Tipo))
+			return nil
+		}
+	}
+
+	return fila
 }
 
 func (a *Analisador) parseExpressaoAgrupada() (arv.Expressao, bool) {
