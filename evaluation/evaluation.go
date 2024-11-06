@@ -99,7 +99,20 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 	case *arv.ExpressaoFun:
 		return &obj.ObjFuncao{Parametros: no.Parametros, BlocoInstrucoes: no.Bloco, Amb: ambiente}
 	case *arv.ExpressaoClass:
-		return avaliaClasse(no,ambiente)
+		supers := make([]*obj.Classe, len(no.SuperClasses))
+
+		for i,expr := range no.SuperClasses {
+			resultado := Avaliar(expr,ambiente)
+			if classe,ok := resultado.(*obj.Classe);ok {
+				supers[i] = classe
+			} else if resultado.Tipo() == obj.ERRO {
+				return resultado
+			} else {
+				return geraErro(fmt.Sprintf("O objeto %s não é um objeto do tipo CLASS, e portanto não pode ser herdado",resultado.Inspecionar()))
+			}
+		}
+
+		return avaliaClasse(no,supers,ambiente)
 	case *arv.ExpressaoObjeto:
 
 		retorno,erro := avaliaObject(no,CLASSMAE)

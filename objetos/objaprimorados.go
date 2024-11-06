@@ -146,7 +146,7 @@ func (l *ObjArray) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 		}
 
 		if posicao > l.Tamanho {
-			l.Tamanho = posicao+1
+			l.Tamanho = posicao + 1
 		}
 
 		l.ArrayList[posicao] = valor
@@ -286,30 +286,30 @@ func (obj *ObjDict) Iterar(index int) ObjetoBase {
 }
 
 type Classe struct {
-	Supers []*Classe
-	Construtor *Metodo
-	ObjModel *ObjetoUser
+	Supers         []*Classe
+	Construtor     *Metodo
+	ObjModel       *ObjetoUser
 	AtributosClass Propriedade
 }
 
 type Metodo struct {
-	Classe *Classe
-	Objeto *ObjetoUser
-	Funcao *ObjFuncao
+	Classe     *Classe
+	Objeto     *ObjetoUser
+	Funcao     *ObjFuncao
 	Parametros []string
 }
 
-func (cl *Classe) Tipo() TipoObjeto {return CLASSE}
+func (cl *Classe) Tipo() TipoObjeto { return CLASSE }
 func (cl *Classe) Inspecionar() string {
-	parts := make([]string,len(cl.AtributosClass))
-	
+	parts := make([]string, len(cl.AtributosClass))
+
 	i := 0
 	for text := range cl.AtributosClass {
 		parts[i] = text
 		i++
 	}
 
-	return fmt.Sprintf("Class: {%s}",strings.Join(parts,","))
+	return fmt.Sprintf("Class: {%s}", strings.Join(parts, ","))
 }
 
 func (cl *Classe) OpInfixo(op string, dir ObjetoBase) ObjetoBase {
@@ -322,7 +322,7 @@ func (cl *Classe) GetPropriedade(propri string) ObjetoBase {
 	var res ObjetoBase
 	res, ok := cl.AtributosClass[propri]
 	if !ok {
-		for _,classe := range cl.Supers {
+		for _, classe := range cl.Supers {
 			res = classe.GetPropriedade(propri)
 
 			if res.Tipo() != ERRO {
@@ -330,22 +330,20 @@ func (cl *Classe) GetPropriedade(propri string) ObjetoBase {
 			}
 		}
 
-		return geraErro(fmt.Sprintf("Propriedade %s não encontrada",propri))
+		return geraErro(fmt.Sprintf("Propriedade %s não encontrada", propri))
 	}
 
 	return res
 }
 func (cl *Classe) SetPropriedade(propri string, valor ObjetoBase) ObjetoBase {
 	if _, ok := cl.AtributosClass[propri]; !ok {
-		return geraErro(fmt.Sprintf("Propriedade %s não encontrada",propri))
+		return geraErro(fmt.Sprintf("Propriedade %s não encontrada", propri))
 	}
 
 	cl.AtributosClass[propri] = valor
 
 	return OBJ_NONE
 }
-
-
 
 func (m *Metodo) Tipo() TipoObjeto { return FUNCAO_OBJ }
 func (f *Metodo) Inspecionar() string {
@@ -377,14 +375,16 @@ func (f *Metodo) SetPropriedade(propri string, valor ObjetoBase) ObjetoBase {
 }
 
 type ObjetoUser struct {
-	ClasseMae *Classe
-	Publicas Propriedade
+	ClasseMae  *Classe
+	Publicas   Propriedade
 	Protegidos Propriedade
-	Privadas map[*Classe]Propriedade
+	Privadas   map[*Classe]Propriedade
 }
 
 func (obj *ObjetoUser) Tipo() TipoObjeto { return OBJETO }
-func (obj *ObjetoUser) Inspecionar() string {return fmt.Sprintf("Object class = %s, address = %d",obj.ClasseMae.Inspecionar(),&obj)}
+func (obj *ObjetoUser) Inspecionar() string {
+	return fmt.Sprintf("Object class = %s, address = %d", obj.ClasseMae.Inspecionar(), &obj)
+}
 func (obj *ObjetoUser) OpPrefixo(op string) ObjetoBase {
 	return &ObjTexto{Valor: "Nao implementado"}
 }
@@ -395,10 +395,10 @@ func (obj *ObjetoUser) GetPropriedade(propriedade string) ObjetoBase {
 	res, ok := obj.Publicas[propriedade]
 
 	if !ok {
-		return geraErro("Propriedade "+propriedade+" nao encontrada")
+		return geraErro("Propriedade " + propriedade + " nao encontrada")
 	}
 
-	if metodo,ok := res.(*Metodo);ok {
+	if metodo, ok := res.(*Metodo); ok {
 		metodo.Objeto = obj
 
 		return metodo
@@ -414,12 +414,12 @@ func (obj *ObjetoUser) SetPropriedade(prorpri string, valor ObjetoBase) ObjetoBa
 		return OBJ_NONE
 	}
 
-	return geraErro(fmt.Sprintf("Propriedade %s nao encontrada",prorpri))
+	return geraErro(fmt.Sprintf("Propriedade %s nao encontrada", prorpri))
 }
 
 func (obj *ObjetoUser) Get(propriedade string, ambiente *Ambiente) ObjetoBase {
-	if res,ok := obj.Protegidos[propriedade]; ok {
-		if metodo,ok := res.(*Metodo); ok {
+	if res, ok := obj.Protegidos[propriedade]; ok {
+		if metodo, ok := res.(*Metodo); ok {
 			metodo.Objeto = obj
 			return metodo
 		}
@@ -432,7 +432,7 @@ func (obj *ObjetoUser) Get(propriedade string, ambiente *Ambiente) ObjetoBase {
 			return obj.GetPropriedade(propriedade)
 		}
 
-		if metodo,ok := res.(*Metodo); ok {
+		if metodo, ok := res.(*Metodo); ok {
 			metodo.Objeto = obj
 			return metodo
 		}
@@ -443,20 +443,20 @@ func (obj *ObjetoUser) Get(propriedade string, ambiente *Ambiente) ObjetoBase {
 	return obj.GetPropriedade(propriedade)
 }
 
-func (obj *ObjetoUser) Set(propriedade string, valor ObjetoBase,ambiente *Ambiente) ObjetoBase {
-	if _,ok := obj.Protegidos[propriedade]; ok {
+func (obj *ObjetoUser) Set(propriedade string, valor ObjetoBase, ambiente *Ambiente) ObjetoBase {
+	if _, ok := obj.Protegidos[propriedade]; ok {
 		obj.Protegidos[propriedade] = valor
 		return OBJ_NONE
 	} else if classe, ok := obj.Privadas[ambiente.Classe]; ok {
 		_, ok := classe[propriedade]
 
 		if !ok {
-			return obj.SetPropriedade(propriedade,valor)
+			return obj.SetPropriedade(propriedade, valor)
 		}
 
 		classe[propriedade] = valor
 		return OBJ_NONE
 	}
 
-	return obj.SetPropriedade(propriedade,valor)
+	return obj.SetPropriedade(propriedade, valor)
 }

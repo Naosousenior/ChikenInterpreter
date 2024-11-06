@@ -1051,6 +1051,8 @@ func (a *Analisador) parseExpressaoClass() (arv.Expressao, bool) {
 			}
 
 			expreClass.SuperClasses = aux.GetLista(filaSupers)
+		} else {
+			expreClass.SuperClasses = make([]arv.Expressao, 0)
 		}
 
 		a.avancaToken()
