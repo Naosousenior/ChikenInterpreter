@@ -387,16 +387,19 @@ func (ec *ExpressaoClass) GetInformacao() string {
 	}
 
 	parts[i] = indent+"Propriedades privadas:"
+	i++
 	for chave,valor := range ec.AtribPriv {
 		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
 		i++
 	}
 	parts[i] = indent+"Propriedades protegidas:"
+	i++
 	for chave,valor := range ec.AtribPro {
 		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
 		i++
 	}
 	parts[i] = indent+"Propriedades de classe:"
+	i++
 	for chave,valor := range ec.AtribClass {
 		parts[i] = fmt.Sprintf("%sPropriedade: %s.\n%sExpressao:\n%s",indent,chave,indent,valor.GetInformacao())
 		i++

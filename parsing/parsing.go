@@ -1095,6 +1095,12 @@ func (a *Analisador) parseExpressaoClass() (arv.Expressao, bool) {
 		}
 
 		nomeAtrib = a.Atual.Valor
+
+		if !a.esperaToken(lex.RECEBE) {
+			return nil, false
+		}
+		a.avancaToken()
+
 		exprAtrib, ok = a.parseExpressao(MENOR)
 
 		if !ok {

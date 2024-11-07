@@ -3,6 +3,7 @@ package objetos
 import (
 	//arv "TestesInterpreter/parsing/arvore"
 
+	tool "ChikenInterpreter/ferramentas"
 	"fmt"
 	"strings"
 )
@@ -286,10 +287,11 @@ func (obj *ObjDict) Iterar(index int) ObjetoBase {
 }
 
 type Classe struct {
-	Supers         []*Classe
-	Construtor     *Metodo
-	ObjModel       *ObjetoUser
-	AtributosClass Propriedade
+	Supers          []*Classe
+	Construtor      *Metodo
+	ObjModel        *ObjetoUser
+	AtribbProtegido tool.Conjunto
+	AtributosClass  Propriedades
 }
 
 type Metodo struct {
@@ -301,6 +303,9 @@ type Metodo struct {
 
 func (cl *Classe) Tipo() TipoObjeto { return CLASSE }
 func (cl *Classe) Inspecionar() string {
+	
+	//fmt.Println(cl.ObjModel.Publicas["nome"].Inspecionar())
+
 	parts := make([]string, len(cl.AtributosClass))
 
 	i := 0
@@ -322,13 +327,6 @@ func (cl *Classe) GetPropriedade(propri string) ObjetoBase {
 	var res ObjetoBase
 	res, ok := cl.AtributosClass[propri]
 	if !ok {
-		for _, classe := range cl.Supers {
-			res = classe.GetPropriedade(propri)
-
-			if res.Tipo() != ERRO {
-				return res
-			}
-		}
 
 		return geraErro(fmt.Sprintf("Propriedade %s não encontrada", propri))
 	}
@@ -376,9 +374,9 @@ func (f *Metodo) SetPropriedade(propri string, valor ObjetoBase) ObjetoBase {
 
 type ObjetoUser struct {
 	ClasseMae  *Classe
-	Publicas   Propriedade
-	Protegidos Propriedade
-	Privadas   map[*Classe]Propriedade
+	Publicas   Propriedades
+	Protegidos Propriedades
+	Privadas   map[*Classe]Propriedades
 }
 
 func (obj *ObjetoUser) Tipo() TipoObjeto { return OBJETO }
@@ -418,7 +416,8 @@ func (obj *ObjetoUser) SetPropriedade(prorpri string, valor ObjetoBase) ObjetoBa
 }
 
 func (obj *ObjetoUser) Get(propriedade string, ambiente *Ambiente) ObjetoBase {
-	if res, ok := obj.Protegidos[propriedade]; ok {
+	if ambiente.Classe.AtribbProtegido.Tem(propriedade) {
+		res := obj.Protegidos[propriedade]
 		if metodo, ok := res.(*Metodo); ok {
 			metodo.Objeto = obj
 			return metodo

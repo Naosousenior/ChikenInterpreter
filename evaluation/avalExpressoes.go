@@ -1,6 +1,7 @@
 package evaluation
 
 import (
+	tool "ChikenInterpreter/ferramentas"
 	obj "ChikenInterpreter/objetos"
 	arv "ChikenInterpreter/parsing/arvore"
 
@@ -150,9 +151,9 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 	ambiente.Classe = classe
 	novoObjeto := &obj.ObjetoUser{
 		ClasseMae:  ambiente.Classe,
-		Publicas:   make(obj.Propriedade),
-		Protegidos: make(obj.Propriedade),
-		Privadas:   make(map[*obj.Classe]obj.Propriedade),
+		Publicas:   make(obj.Propriedades),
+		Protegidos: make(obj.Propriedades),
+		Privadas:   make(map[*obj.Classe]obj.Propriedades),
 	}
 
 	constroiObjeto(novoObjeto, CLASSMAE)
@@ -204,7 +205,7 @@ func constroiObjeto(objeto *obj.ObjetoUser, classeMae *obj.Classe) {
 
 //func chamaConstrutor(objeto *obj.ObjetoUser,classe *obj.Classe) (*obj.ObjetoUser,*obj.ObjErro)
 
-func passaAtributos(atribRec *obj.Propriedade, atribMen *obj.Propriedade) {
+func passaAtributos(atribRec *obj.Propriedades, atribMen *obj.Propriedades) {
 	for name, value := range *atribMen {
 		(*atribRec)[name] = value
 	}
@@ -213,18 +214,40 @@ func passaAtributos(atribRec *obj.Propriedade, atribMen *obj.Propriedade) {
 func avaliaClasse(noClass *arv.ExpressaoClass, superClasses []*obj.Classe, ambiente *obj.Ambiente) obj.ObjetoBase {
 	novaClasse := &obj.Classe{Supers: superClasses}
 
+	//prepara o modelo
 	modeloObjeto := &obj.ObjetoUser{
 		ClasseMae:  novaClasse,
-		Publicas:   make(obj.Propriedade),
-		Protegidos: make(obj.Propriedade),
-		Privadas:   make(map[*obj.Classe]obj.Propriedade),
+		Publicas:   make(obj.Propriedades),
+		Protegidos: make(obj.Propriedades),
+		Privadas:   make(map[*obj.Classe]obj.Propriedades),
 	}
 
 	for i := len(superClasses) - 1; i >= 0; i-- {
 		construirModeloObjeto(modeloObjeto, superClasses[i])
 	}
 
-	construirModeloObjeto()
+	erro, construtor := addAtributosAtuais(modeloObjeto, noClass, ambiente)
+
+	if erro != nil {
+		return erro
+	}
+
+	//com o modelo pronto, basta adicionar ele no objeto classe
+	novaClasse.ObjModel = modeloObjeto
+
+	//agora, vamos adicionar um objeto construtor
+	novaClasse.Construtor = construtor
+
+	//por fim, vamos adicionar os atributos de classe
+	novaClasse.AtributosClass, erro = getAtributosClasse(noClass, superClasses, ambiente)
+
+	if erro != nil {
+		return erro
+	}
+
+	novaClasse.AtribbProtegido = getAtribbProtegidos(novaClasse)
+
+	return novaClasse
 }
 
 func construirModeloObjeto(modelo *obj.ObjetoUser, classeModelo *obj.Classe) {
@@ -242,14 +265,26 @@ func construirModeloObjeto(modelo *obj.ObjetoUser, classeModelo *obj.Classe) {
 	}
 }
 
-func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass, ambiente *obj.Ambiente) obj.ObjetoBase {
+func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass, ambiente *obj.Ambiente) (obj.ObjetoBase, *obj.Metodo) {
+	var construtor *obj.Metodo = nil
+
 	for chave, valor := range expreClasse.AtribPub {
 		atributo := Avaliar(valor, ambiente)
 
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
+			//o nome de atributo "new_object"
+			//identifica um construtor
+			//obviamente isso so é válido
+			//se for um atributo público
+			if chave == "new_object" {
+				construtor = newMetodo(modelo.ClasseMae, metodo)
+				continue
+			}
+
 			atributo = newMetodo(modelo.ClasseMae, metodo)
+
 		} else if atributo.Tipo() == obj.ERRO {
-			return atributo
+			return atributo, nil
 		}
 
 		modelo.Publicas[chave] = atributo
@@ -261,7 +296,7 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
 			atributo = newMetodo(modelo.ClasseMae, metodo)
 		} else if atributo.Tipo() == obj.ERRO {
-			return atributo
+			return atributo, nil
 		}
 
 		modelo.Protegidos[chave] = atributo
@@ -273,13 +308,58 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
 			atributo = newMetodo(modelo.ClasseMae, metodo)
 		} else if atributo.Tipo() == obj.ERRO {
-			return atributo
+			return atributo, nil
 		}
 
 		modelo.Privadas[ambiente.Classe][chave] = atributo
 	}
 
-	return nil
+	return nil, construtor
 }
 
-func newMetodo(classe *obj.Classe, funcao *obj.ObjFuncao) *obj.Metodo
+func getAtribbProtegidos(classe *obj.Classe) tool.Conjunto {
+
+	protegidos := make(tool.Conjunto)
+
+	for _, super := range classe.Supers {
+		protegidos.Copiar(super.AtribbProtegido)
+	}
+
+	for chave := range classe.ObjModel.Protegidos {
+		protegidos.Add(chave)
+	}
+
+	return protegidos
+}
+
+func newMetodo(classe *obj.Classe, funcao *obj.ObjFuncao) *obj.Metodo {
+	novoMetodo := &obj.Metodo{Classe: classe, Funcao: funcao, Parametros: make([]string, len(funcao.Parametros))}
+
+	for i, atrib := range funcao.Parametros {
+		novoMetodo.Parametros[i] = atrib.Nome
+	}
+
+	return novoMetodo
+}
+
+func getAtributosClasse(expreClass *arv.ExpressaoClass, superClasses []*obj.Classe, amb *obj.Ambiente) (obj.Propriedades, obj.ObjetoBase) {
+	atribClasse := make(obj.Propriedades)
+
+	for _, super := range superClasses {
+		for chave, valor := range super.AtributosClass {
+			atribClasse[chave] = valor
+		}
+	}
+
+	for chave, expre := range expreClass.AtribClass {
+		atributo := Avaliar(expre, amb)
+
+		if atributo.Tipo() == obj.ERRO {
+			return nil, atributo
+		}
+
+		atribClasse[chave] = atributo
+	}
+
+	return atribClasse, nil
+}

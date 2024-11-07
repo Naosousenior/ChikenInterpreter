@@ -1,7 +1,7 @@
 package objetos
 
 type TipoObjeto string
-type Propriedade map[string]ObjetoBase
+type Propriedades map[string]ObjetoBase
 
 const (
 	BFF = "BFF"

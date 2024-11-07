@@ -28,3 +28,25 @@ func GetIdentacao(profundidade int) string {
 
 	return identacao
 }
+
+type Conjunto map[string]struct{}
+
+func (c Conjunto) Add(elemento string) {
+	c[elemento] = struct{}{}
+}
+
+func (c Conjunto) Remove(elemento string) {
+	delete(c, elemento)
+}
+
+func (c Conjunto) Tem(elemento string) bool {
+	_, ok := c[elemento]
+
+	return ok
+}
+
+func (c Conjunto) Copiar(conjunto Conjunto) {
+	for chave := range conjunto {
+		c[chave] = struct{}{}
+	}
+}
