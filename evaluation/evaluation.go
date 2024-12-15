@@ -98,8 +98,10 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 
 	case *arv.ExpressaoFun:
 		return &obj.ObjFuncao{Parametros: no.Parametros, BlocoInstrucoes: no.Bloco, Amb: ambiente}
+
 	case *arv.ExpressaoClass:
-		supers := make([]*obj.Classe, len(no.SuperClasses))
+		supers := make([]*obj.Classe, len(no.SuperClasses)+1)
+		supers[len(supers)-1] = CLASSMAE
 
 		for i,expr := range no.SuperClasses {
 			resultado := Avaliar(expr,ambiente)

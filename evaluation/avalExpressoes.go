@@ -23,9 +23,12 @@ func chamaFuncao(funcao *obj.ObjFuncao, argumentos []obj.ObjetoBase) obj.ObjetoB
 	}
 }
 
-func chamaMetodo(funcao *obj.ObjFuncao, ambiente *obj.Ambiente) obj.ObjetoBase {
-	//fmt.Println(ambiente.Objeto.Protegidos)
-	resultado := avaliaInstrucoes(funcao.BlocoInstrucoes.Instrucoes, ambiente)
+func chamaMetodo(metodo *obj.Metodo, argumentos []obj.ObjetoBase) obj.ObjetoBase {
+	novoAmb := passaParametros(argumentos, metodo.Funcao)
+
+	novoAmb.Objeto = metodo.Objeto
+	novoAmb.Classe = metodo.Classe
+	resultado := avaliaInstrucoes(metodo.Funcao.BlocoInstrucoes.Instrucoes, novoAmb)
 
 	if retorno, ok := resultado.(*obj.ObjReturn); ok {
 
@@ -71,15 +74,57 @@ func avaliaChamada(noCall *arv.CallFun, objeto obj.ObjetoBase, ambiente *obj.Amb
 		return objeto.Funcao(args)
 
 	case *obj.Metodo:
-		novoAmb := passaParametros(args, objeto.Funcao)
+		//preparacao do ambiente
+		
 
-		novoAmb.Objeto = objeto.Objeto
-		novoAmb.Classe = objeto.Classe
+		return chamaMetodo(objeto, args)
 
-		return chamaMetodo(objeto.Funcao, novoAmb)
+	case *obj.Classe:
+		//implementacao de uma chamada de construtor
+		metodo := objeto.Construtor
+		//instanciaremos um novo objeto
+		metodo.Objeto = instanciarNovoObjeto(objeto)
 
+		return chamaMetodo(metodo,args)
 	default:
 		return geraErro(fmt.Sprintf("O objeto %s não pode ser chamado", objeto.Inspecionar()))
+	}
+}
+
+func instanciarNovoObjeto(classeMae *obj.Classe) *obj.ObjetoUser {
+	novoObj := &obj.ObjetoUser{
+		ClasseMae: classeMae,
+		Publicas: make(obj.Propriedades),
+		Protegidos: make(obj.Propriedades),
+		Privadas: make(map[*obj.Classe]obj.Propriedades),
+	}
+
+	modelo := classeMae.ObjModel
+
+	passaAtributos(novoObj,modelo)
+
+	return novoObj
+}
+
+func passaAtributos(receptor *obj.ObjetoUser, modelo *obj.ObjetoUser) {
+	for name, value := range modelo.Publicas {
+		receptor.Publicas[name] = value
+	}
+
+	for name, value := range modelo.Protegidos {
+		receptor.Protegidos[name] = value
+	}
+
+	classeMae := modelo.ClasseMae
+
+	for _,super := range classeMae.Supers {
+		for nome,atrib := range modelo.Privadas[super]{
+			receptor.Privadas[super][nome] = atrib
+		}
+	}
+
+	for nome,atrib := range modelo.Privadas[classeMae]{
+		receptor.Privadas[classeMae][nome] = atrib
 	}
 }
 
@@ -156,7 +201,9 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 		Privadas:   make(map[*obj.Classe]obj.Propriedades),
 	}
 
-	constroiObjeto(novoObjeto, CLASSMAE)
+	for propriedade, valor := range CLASSMAE.ObjModel.Publicas {
+		novoObjeto.Publicas[propriedade] = valor
+	}
 
 	for propriedade, exprV := range expressao.Atributos {
 		valor = Avaliar(exprV, ambiente)
@@ -182,17 +229,21 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 	return novoObjeto, nil
 }
 
+/*
+
+Metodo ultrapassado
+
 func constroiObjeto(objeto *obj.ObjetoUser, classeMae *obj.Classe) {
 	if classeMae == CLASSMAE {
 		for propriedade, valor := range CLASSMAE.ObjModel.Publicas {
 			objeto.Publicas[propriedade] = valor
 		}
-
-		return
 	} else {
+		
 		for i := len(classeMae.Supers) - 1; i >= 0; i++ {
 			constroiObjeto(objeto, classeMae.Supers[i])
 		}
+		
 
 		passaAtributos(&objeto.Publicas, &classeMae.ObjModel.Publicas)
 		passaAtributos(&objeto.Protegidos, &classeMae.ObjModel.Protegidos)
@@ -203,13 +254,7 @@ func constroiObjeto(objeto *obj.ObjetoUser, classeMae *obj.Classe) {
 	}
 }
 
-//func chamaConstrutor(objeto *obj.ObjetoUser,classe *obj.Classe) (*obj.ObjetoUser,*obj.ObjErro)
-
-func passaAtributos(atribRec *obj.Propriedades, atribMen *obj.Propriedades) {
-	for name, value := range *atribMen {
-		(*atribRec)[name] = value
-	}
-}
+*/
 
 func avaliaClasse(noClass *arv.ExpressaoClass, superClasses []*obj.Classe, ambiente *obj.Ambiente) obj.ObjetoBase {
 	novaClasse := &obj.Classe{Supers: superClasses}

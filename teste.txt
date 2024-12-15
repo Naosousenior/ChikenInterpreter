@@ -1,5 +1,12 @@
 var classe = class {
     nome = 'Sla man',
     class
-    sla = 'nome'
+    sla = 'nome',
+
+    new_object = fn (nome) {
+        object.nome = nome;
+        return object;
+    }
 };
+
+var objeto = classe('Ricardao');

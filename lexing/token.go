@@ -38,7 +38,7 @@ func getIdentificador(valor string) TipoToken {
 		"protected": PROTEGIDO,
 		"private":   PRIVADO,
 		"super":     SUPER,
-		"fun":       FUN,
+		"fn":        FUN,
 		"repeat":    REPEAT,
 		"iter":      ITER,
 		"break":     BREAK,
