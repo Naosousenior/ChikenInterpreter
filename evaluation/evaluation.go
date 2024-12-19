@@ -103,6 +103,7 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 		supers := make([]*obj.Classe, len(no.SuperClasses)+1)
 		supers[len(supers)-1] = CLASSMAE
 
+
 		for i,expr := range no.SuperClasses {
 			resultado := Avaliar(expr,ambiente)
 			if classe,ok := resultado.(*obj.Classe);ok {
@@ -113,6 +114,8 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 				return geraErro(fmt.Sprintf("O objeto %s não é um objeto do tipo CLASS, e portanto não pode ser herdado",resultado.Inspecionar()))
 			}
 		}
+
+		fmt.Println(ambiente)
 
 		return avaliaClasse(no,supers,ambiente)
 	case *arv.ExpressaoObjeto:

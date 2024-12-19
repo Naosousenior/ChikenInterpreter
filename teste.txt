@@ -1,12 +1,14 @@
 var classe = class {
     nome = 'Sla man',
-    class
-    sla = 'nome',
 
     new_object = fn (nome) {
         object.nome = nome;
         return object;
     }
+
+    class
+    sla = 'nome'
 };
 
-var objeto = classe('Ricardao');
+var novoObj = classe('novinho');
+bff.write(novoObj);

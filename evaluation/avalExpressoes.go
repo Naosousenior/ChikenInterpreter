@@ -80,30 +80,34 @@ func avaliaChamada(noCall *arv.CallFun, objeto obj.ObjetoBase, ambiente *obj.Amb
 		return chamaMetodo(objeto, args)
 
 	case *obj.Classe:
-		//implementacao de uma chamada de construtor
-		metodo := objeto.Construtor
-		//instanciaremos um novo objeto
-		metodo.Objeto = instanciarNovoObjeto(objeto)
+		//implementacao de uma instanciacao de objeto
 
-		return chamaMetodo(metodo,args)
+
+		//primeiro, verificamos se o construtor da classe foi definido pelo usuário
+		if objeto.Construtor != nil {
+			construtor := objeto.Construtor
+			construtor.Objeto = instanciarNovoObjeto(objeto)
+			
+			return chamaMetodo(construtor,args)
+		}
+
+		return instanciarNovoObjeto(objeto)
 	default:
 		return geraErro(fmt.Sprintf("O objeto %s não pode ser chamado", objeto.Inspecionar()))
 	}
 }
 
 func instanciarNovoObjeto(classeMae *obj.Classe) *obj.ObjetoUser {
-	novoObj := &obj.ObjetoUser{
+	novoObj := obj.ObjetoUser{
 		ClasseMae: classeMae,
 		Publicas: make(obj.Propriedades),
 		Protegidos: make(obj.Propriedades),
 		Privadas: make(map[*obj.Classe]obj.Propriedades),
 	}
 
-	modelo := classeMae.ObjModel
+	passaAtributos(&novoObj,classeMae.ObjModel)
 
-	passaAtributos(novoObj,modelo)
-
-	return novoObj
+	return &novoObj
 }
 
 func passaAtributos(receptor *obj.ObjetoUser, modelo *obj.ObjetoUser) {
@@ -322,6 +326,7 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 			//obviamente isso so é válido
 			//se for um atributo público
 			if chave == "new_object" {
+				fmt.Println("Achei o problema")
 				construtor = newMetodo(modelo.ClasseMae, metodo)
 				continue
 			}
