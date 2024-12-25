@@ -122,6 +122,7 @@ func passaAtributos(receptor *obj.ObjetoUser, modelo *obj.ObjetoUser) {
 	classeMae := modelo.ClasseMae
 
 	for _,super := range classeMae.Supers {
+		receptor.Privadas[super] = make(obj.Propriedades)
 		for nome,atrib := range modelo.Privadas[super]{
 			receptor.Privadas[super][nome] = atrib
 		}
@@ -309,6 +310,7 @@ func construirModeloObjeto(modelo *obj.ObjetoUser, classeModelo *obj.Classe) {
 		modelo.Protegidos[chave] = valor
 	}
 
+	modelo.Privadas[classeModelo] = make(obj.Propriedades)
 	for chave, valor := range classeModelo.ObjModel.Privadas[classeModelo] {
 		modelo.Privadas[classeModelo][chave] = valor
 	}
@@ -352,6 +354,7 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 		modelo.Protegidos[chave] = atributo
 	}
 
+	modelo.Privadas[modelo.ClasseMae] = make(obj.Propriedades)
 	for chave, valor := range expreClasse.AtribPriv {
 		atributo := Avaliar(valor, ambiente)
 
@@ -361,7 +364,9 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 			return atributo, nil
 		}
 
-		modelo.Privadas[ambiente.Classe][chave] = atributo
+		fmt.Printf("chave: %s, classe: %s, atributo: %s",chave,modelo.ClasseMae.Inspecionar(),atributo.Inspecionar())
+		
+		modelo.Privadas[modelo.ClasseMae][chave] = atributo
 	}
 
 	return nil, construtor

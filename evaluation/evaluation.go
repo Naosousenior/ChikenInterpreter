@@ -185,7 +185,7 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 		return obj.OBJ_NONE
 	}
 
-	return geraErro("Tomar no boga meu irmao")
+	return geraErro(fmt.Sprintf("Tomar no boga meu irmao: %s",no))
 }
 
 func geraErro(msg string) *obj.ObjErro {

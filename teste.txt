@@ -1,14 +1,23 @@
-var classe = class {
-    nome = 'Sla man',
+var pessoa = class {
+    nome = 'Joao pessoa',
+    get_doencas_cu = fn() {return object.doencas_cu; }
+    
+    protected
+    CPF = 07569820304,
 
-    new_object = fn (nome) {
-        object.nome = nome;
-        return object;
-    }
-
-    class
-    sla = 'nome'
+    private
+    doencas_cu = ['hemorroida','oxiuriase']
 };
 
-var novoObj = classe('novinho');
-bff.write(novoObj);
+var funcionario = class(pessoa) {
+    carteira = 1000,
+
+    get_doencas = fn() { return object.doencas_cu;},
+    get_cpf = fn() {return object.CPF;}
+
+    protected
+    salario = 0.0,
+    nivel_preguica = 0.9
+};
+
+var aline = funcionario();
