@@ -8,93 +8,112 @@ import (
 )
 
 func FalsoHash(objeto obj.ObjetoBase) string {
-	return string(objeto.Tipo()) +": "+objeto.Inspecionar()
+	return string(objeto.Tipo()) + ": " + objeto.Inspecionar()
 }
 
-func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
-	switch no := no.(type) {
+func status(tipo obj.TipoStatus,objeto obj.ObjetoBase) *obj.Status {
+	return &obj.Status{Tipo: tipo,Resultado: objeto}
+}
+
+func AvaliaInstrucao(instrucao arv.Instrucao, ambiente *obj.Ambiente) *obj.Status {
+
+	switch no := instrucao.(type) {
 	case *arv.Programa:
 		return avaliaPrograma(no.Instrucoes, ambiente)
 
 	case *arv.InstrucaodeExpressao:
-		return Avaliar(no.Expressao, ambiente)
-
-	case *arv.InstrucaoAtribuicao:
-		novoValor := Avaliar(no.ExprValue, ambiente)
-
-		if novoValor.Tipo() == obj.ERRO {
-			return novoValor
+		switch expressao := no.Expressao.(type) {
+		case *arv.ExpressaoIf:
+			return avaliaIfElse(expressao,ambiente)
+		case *arv.ExpressaoRepeat:
+			return avaliaRepeat(expressao,ambiente)
+		default:
+			return status(obj.EXPRESSAO,AvaliaExpressao(expressao,ambiente))
 		}
 
-		return avaliaAtribuicao(no.Operador, no.ExprRecebe, novoValor, ambiente)
+	case *arv.InstrucaoAtribuicao:
+		novoValor := AvaliaExpressao(no.ExprValue, ambiente)
+
+		if novoValor.Tipo() == obj.EXCECAO {
+			return status(obj.ERROR,novoValor)
+		}
+
+		return status(obj.ATRIBUICAO,avaliaAtribuicao(no.Operador, no.ExprRecebe, novoValor, ambiente))
 
 	case *arv.ReturnInstrucao:
-		res := Avaliar(no.Expre, ambiente)
-		return &obj.ObjReturn{Valor: res}
+		res := AvaliaExpressao(no.Expre, ambiente)
+		if res.Tipo() == obj.EXCECAO {
+			return status(obj.ERROR,res)
+		}
+		return status(obj.RETURN,res)
 
 	case *arv.InstrucaoBreak:
-		return obj.OBJ_BREAK
+		return obj.BREAK_ST
 	case *arv.InstrucaoContinue:
-		return obj.OBJ_CONTINUE
+		return obj.CONTINUE_ST
 
 	case *arv.ErrInstrucao:
-		res := Avaliar(no.Expre, ambiente)
+		res := AvaliaExpressao(no.Expre, ambiente)
 
-		return &obj.ObjErro{Mensagem: "Exeção: " + res.Inspecionar(), Objeto: res}
+		return status(obj.ERROR,&obj.ObjExcessao{Mensagem: "Exeção: " + res.Inspecionar(), Objeto: res})
 
 	case *arv.VarInstrucao:
 		for _, vardec := range no.Vars {
-			valor := Avaliar(vardec.Expres, ambiente)
-			if valor.Tipo() == obj.ERRO {
-				return valor
+			valor := AvaliaExpressao(vardec.Expres, ambiente)
+			if valor.Tipo() == obj.EXCECAO {
+				return status(obj.ERROR,valor)
 			}
-
-			if aux, ok := valor.(*obj.ObjReturn); ok {
-				valor = aux.Valor
-			}
+			
 
 			res := ambiente.CriaVar(vardec.Ident.Nome, valor)
 
-			if res.Tipo() == obj.ERRO {
-				return res
+			if res.Tipo() == obj.EXCECAO {
+				return status(obj.ERROR,res)
 			}
 		}
 
-		return obj.OBJ_NONE
+		return status(obj.DECLARACAO,obj.OBJ_NONE)
 
 	case *arv.InstrucaoIter:
 		return avaliaIter(no, ambiente)
 
 	case *arv.InstrucaoSwitch:
-		return avaliaSwitch(no,ambiente)
+		return avaliaSwitch(no, ambiente)
+
+	case *arv.BlocoInstrucao:
+		return avaliaInstrucoes(no.Instrucoes, ambiente)
+	}
+
+	return status(obj.ERROR,geraErro("Instrucao desconhecida"))
+}
+
+func AvaliaExpressao(expressao arv.Expressao, ambiente *obj.Ambiente) obj.ObjetoBase {
+	switch no := expressao.(type) {
 
 	case *arv.ExpressaodePrefixo:
-		exprDirei := Avaliar(no.ExpDireita, ambiente)
-		if exprDirei.Tipo() == obj.ERRO {
+		exprDirei := AvaliaExpressao(no.ExpDireita, ambiente)
+		if exprDirei.Tipo() == obj.EXCECAO {
 			return exprDirei
 		}
 		return exprDirei.OpPrefixo(no.Operador)
 
 	case *arv.ExpressaoAtributo:
-		if _,ok := no.Expres.(*arv.ChamadaObjeto); ok{
-			return ambiente.Objeto.Get(no.Atributo,ambiente)
+		if _, ok := no.Expres.(*arv.ChamadaObjeto); ok {
+			return ambiente.Objeto.Get(no.Atributo, ambiente)
 		}
 
-		objeto := Avaliar(no.Expres, ambiente)
-		if objeto.Tipo() == obj.ERRO {
+		objeto := AvaliaExpressao(no.Expres, ambiente)
+		if objeto.Tipo() == obj.EXCECAO {
 			return objeto
 		}
 
 		return objeto.GetPropriedade(no.Atributo)
 
-	case *arv.BlocoInstrucao:
-		return avaliaInstrucoes(no.Instrucoes, ambiente)
-
 	case *arv.ExpressaoIf:
-		return avaliaIfElse(no, ambiente)
+		return avaliaIfElse(no, ambiente).Resultado
 
 	case *arv.ExpressaoRepeat:
-		return avaliaRepeat(no, ambiente)
+		return avaliaRepeat(no, ambiente).Resultado
 
 	case *arv.ExpressaoFun:
 		return &obj.ObjFuncao{Parametros: no.Parametros, BlocoInstrucoes: no.Bloco, Amb: ambiente}
@@ -103,24 +122,23 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 		supers := make([]*obj.Classe, len(no.SuperClasses)+1)
 		supers[len(supers)-1] = CLASSMAE
 
-
-		for i,expr := range no.SuperClasses {
-			resultado := Avaliar(expr,ambiente)
-			if classe,ok := resultado.(*obj.Classe);ok {
+		for i, expr := range no.SuperClasses {
+			resultado := AvaliaExpressao(expr, ambiente)
+			if classe, ok := resultado.(*obj.Classe); ok {
 				supers[i] = classe
-			} else if resultado.Tipo() == obj.ERRO {
+			} else if resultado.Tipo() == obj.EXCECAO {
 				return resultado
 			} else {
-				return geraErro(fmt.Sprintf("O objeto %s não é um objeto do tipo CLASS, e portanto não pode ser herdado",resultado.Inspecionar()))
+				return geraErro(fmt.Sprintf("O objeto %s não é um objeto do tipo CLASS, e portanto não pode ser herdado", resultado.Inspecionar()))
 			}
 		}
 
 		fmt.Println(ambiente)
 
-		return avaliaClasse(no,supers,ambiente)
+		return avaliaClasse(no, supers, ambiente)
 	case *arv.ExpressaoObjeto:
 
-		retorno,erro := avaliaObject(no,CLASSMAE)
+		retorno, erro := avaliaObject(no, CLASSMAE)
 
 		if erro == nil {
 			return retorno
@@ -129,9 +147,9 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 		return erro
 
 	case *arv.CallFun:
-		obj_fun := Avaliar(no.Funcao, ambiente)
+		obj_fun := AvaliaExpressao(no.Funcao, ambiente)
 
-		return avaliaChamada(no,obj_fun,ambiente)
+		return avaliaChamada(no, obj_fun, ambiente)
 
 	case *arv.ChamadaObjeto:
 		if ambiente.Objeto == nil {
@@ -142,11 +160,11 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 
 	case *arv.ExpressaoInfixo:
 		op := no.Operador
-		esq := Avaliar(no.ExpEsquerda, ambiente)
-		dir := Avaliar(no.ExpDireita, ambiente)
+		esq := AvaliaExpressao(no.ExpEsquerda, ambiente)
+		dir := AvaliaExpressao(no.ExpDireita, ambiente)
 
-		if esq.Tipo() == obj.ERRO || dir.Tipo() == obj.ERRO {
-			if esq.Tipo() == obj.ERRO {
+		if esq.Tipo() == obj.EXCECAO || dir.Tipo() == obj.EXCECAO {
+			if esq.Tipo() == obj.EXCECAO {
 				return esq
 			} else {
 				return dir
@@ -157,13 +175,13 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 
 	case *arv.ExpressaoLista:
 		valores := avaliaExpressoes(no.Expressoes, ambiente)
-		if len(valores) > 0 && valores[0].Tipo() == obj.ERRO {
+		if len(valores) > 0 && valores[0].Tipo() == obj.EXCECAO {
 			return valores[0]
 		}
 		return &obj.ObjArray{ArrayList: valores, Capacidade: len(valores), Tamanho: len(valores)}
 
 	case *arv.ExpressaoDict:
-		return avaliaDict(no,ambiente)
+		return avaliaDict(no, ambiente)
 
 	case *arv.LiteralInt:
 		return &obj.ObjInteiro{Valor: int(no.Valor)}
@@ -185,43 +203,38 @@ func Avaliar(no arv.No, ambiente *obj.Ambiente) obj.ObjetoBase {
 		return obj.OBJ_NONE
 	}
 
-	return geraErro(fmt.Sprintf("Tomar no boga meu irmao: %s",no))
+	return geraErro(fmt.Sprintf("Tomar no boga meu irmao: %s", expressao))
 }
 
-func geraErro(msg string) *obj.ObjErro {
-	return &obj.ObjErro{Mensagem: msg}
+func geraErro(msg string) *obj.ObjExcessao {
+	return &obj.ObjExcessao{Mensagem: msg}
 }
 
-func avaliaPrograma(instrucoes []arv.Instrucao, ambiente *obj.Ambiente) obj.ObjetoBase {
+func avaliaPrograma(instrucoes []arv.Instrucao, ambiente *obj.Ambiente) *obj.Status {
 	resultado := avaliaInstrucoes(instrucoes, ambiente)
 
-	if retorno, ok := resultado.(*obj.ObjReturn); ok {
-		return retorno.Valor
-	} else if retorno, ok := resultado.(*obj.ObjInstrucao); ok {
-		return geraErro(fmt.Sprintf("Instrucao %s fora de contexto",retorno.Inspecionar()))
-	}
-
 	if resultado == nil {
-		return &obj.ObjErro{Mensagem: ""}
+		return &obj.Status{Tipo: obj.ERROR,Resultado: &obj.ObjExcessao{Mensagem: ""}}
 	}
 
 	return resultado
 }
 
-func avaliaInstrucoes(instrucoes []arv.Instrucao, ambiente *obj.Ambiente) obj.ObjetoBase {
-	var resultado obj.ObjetoBase
+func avaliaInstrucoes(instrucoes []arv.Instrucao, ambiente *obj.Ambiente) *obj.Status {
+	var resultado *obj.Status
 
 	for _, instrucao := range instrucoes {
-		resultado = Avaliar(instrucao, ambiente)
+		resultado = AvaliaInstrucao(instrucao, ambiente)
 
 		if resultado == nil {
+			fmt.Println("Cara, não é pra retornar nil não")
 			continue
-		} else if resultado.Tipo() == obj.VALOR_RETORNO {
+		} else if resultado.Tipo == obj.RETURN {
 			return resultado
-		} else if resultado.Tipo() == obj.ERRO  {
+		} else if resultado.Tipo == obj.ERROR {
 			fmt.Printf("Linha: %d\n", instrucao.GetTokenNo().Pos.Linha)
 			break
-		} else if resultado == obj.OBJ_BREAK || resultado == obj.OBJ_CONTINUE {
+		} else if resultado.Tipo == obj.BREAK || resultado.Tipo == obj.CONTINUE {
 			break
 		}
 	}
@@ -233,9 +246,9 @@ func avaliaExpressoes(expressoes []arv.Expressao, ambiente *obj.Ambiente) []obj.
 	resultado := make([]obj.ObjetoBase, len(expressoes))
 
 	for i, exp := range expressoes {
-		av := Avaliar(exp, ambiente)
+		av := AvaliaExpressao(exp, ambiente)
 
-		if av.Tipo() == obj.ERRO {
+		if av.Tipo() == obj.EXCECAO {
 			return []obj.ObjetoBase{av}
 		}
 

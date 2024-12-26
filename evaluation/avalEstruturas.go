@@ -5,30 +5,30 @@ import (
 	arv "ChikenInterpreter/parsing/arvore"
 )
 
-func avaliaIfElse(noIf *arv.ExpressaoIf, ambiente *obj.Ambiente) obj.ObjetoBase {
-	var resultado obj.ObjetoBase
+func avaliaIfElse(noIf *arv.ExpressaoIf, ambiente *obj.Ambiente) *obj.Status {
+	var resultado *obj.Status
 
-	condicao := Avaliar(noIf.Condicao, ambiente)
-	if condicao.Tipo() == obj.ERRO {
-		return condicao
+	condicao := AvaliaExpressao(noIf.Condicao, ambiente)
+	if condicao.Tipo() == obj.EXCECAO {
+		return status(obj.ERROR,condicao)
 	}
 
 	entao := noIf.BlocoEntao
 	senao := noIf.BlocoSenao
 
 	if eVerdadeiro(condicao) {
-		resultado = Avaliar(entao, ambiente)
+		resultado = avaliaInstrucoes(entao.Instrucoes, ambiente)
 	} else if senao != nil {
-		resultado = Avaliar(senao, ambiente)
+		resultado = avaliaInstrucoes(senao.Instrucoes, ambiente)
 	} else {
-		resultado = obj.OBJ_NONE
+		resultado = status(obj.EXPRESSAO,obj.OBJ_NONE)
 	}
 
 	return resultado
 }
 
-func avaliaRepeat(noRepeat *arv.ExpressaoRepeat, ambiente *obj.Ambiente) obj.ObjetoBase {
-	var item obj.ObjetoBase
+func avaliaRepeat(noRepeat *arv.ExpressaoRepeat, ambiente *obj.Ambiente) *obj.Status {
+	var item *obj.Status
 	condicao1 := noRepeat.Condicao1
 	condicao2 := noRepeat.Condicao2
 	codigo := noRepeat.BlocoRepetir
@@ -36,26 +36,26 @@ func avaliaRepeat(noRepeat *arv.ExpressaoRepeat, ambiente *obj.Ambiente) obj.Obj
 	lista := make([]obj.ObjetoBase, 0)
 
 	for {
-		if !eVerdadeiro(Avaliar(condicao1, ambiente)) {
+		if !eVerdadeiro(AvaliaExpressao(condicao1, ambiente)) {
 			break
 		}
 
 		item = avaliaInstrucoes(codigo.Instrucoes, ambiente)
 
-		if item.Tipo() == obj.VALOR_RETORNO || item.Tipo() == obj.ERRO {
+		if item.Tipo == obj.RETURN || item.Tipo == obj.ERROR {
 			return item
-		} else if item == obj.OBJ_BREAK {
+		} else if item == obj.BREAK_ST {
 			break
 		}
 
-		if item != obj.OBJ_NONE && item != obj.OBJ_CONTINUE {
-			lista = append(lista, item)
+		if item.Resultado != obj.OBJ_NONE && item != obj.CONTINUE_ST {
+			lista = append(lista, item.Resultado)
 		}
 
-		if !eVerdadeiro(Avaliar(condicao2, ambiente)) {
+		if !eVerdadeiro(AvaliaExpressao(condicao2, ambiente)) {
 			break
 		}
 	}
 
-	return &obj.ObjArray{ArrayList: lista, Capacidade: len(lista), Tamanho: len(lista)}
+	return status(obj.EXPRESSAO,&obj.ObjArray{ArrayList: lista, Capacidade: len(lista), Tamanho: len(lista)})
 }

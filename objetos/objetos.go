@@ -11,11 +11,9 @@ const (
 	TEXTO          = "TEXTO"
 	BOOLEANO       = "BOOL"
 	NONE           = "NONE"
-	VALOR_RETORNO  = "RETORNO"
-	INSTRUCAO      = "INSTRUCAO"
+	EXCECAO        = "EXCECAO"
 	FUNCAO_OBJ     = "FUNCAO"
 	FUNCAO_INTERNA = "FUNC INTERNA"
-	ERRO           = "ERRO"
 
 	LISTA  = "LISTA"
 	DICT   = "DICT"
@@ -24,11 +22,9 @@ const (
 )
 
 var (
-	OBJ_TRUE     = &ObjBool{Valor: true}
-	OBJ_FALSE    = &ObjBool{Valor: false}
-	OBJ_NONE     = &ObjNone{}
-	OBJ_BREAK    = &ObjInstrucao{Instru: "BREAK"}
-	OBJ_CONTINUE = &ObjInstrucao{Instru: "CONTINUE"}
+	OBJ_TRUE  = &ObjBool{Valor: true}
+	OBJ_FALSE = &ObjBool{Valor: false}
+	OBJ_NONE  = &ObjNone{}
 )
 
 type ObjetoBase interface {
@@ -43,5 +39,35 @@ type ObjetoBase interface {
 type ObjetoIndexavel interface {
 	ObjetoBase
 	SetIndex(ObjetoBase, ObjetoBase) ObjetoBase
-	Iterar(int) ObjetoBase
+	Iterar(int) *Status
+}
+
+type TipoStatus int
+
+const (
+	BREAK = iota
+	CONTINUE
+	RETURN
+	ERROR
+	TENTATIVA
+	DECLARACAO
+	DEFINICAO
+	ATRIBUICAO
+	ITERACAO
+	SWITCH
+	EXE_INSTRUCAO
+	SUPERCALL
+	EXPRESSAO
+)
+
+var (
+	BREAK_ST    = &Status{Tipo: BREAK, Resultado: OBJ_NONE}
+	CONTINUE_ST = &Status{Tipo: CONTINUE, Resultado: OBJ_NONE}
+	ITER_ST     = &Status{Tipo: ITERACAO, Resultado: OBJ_NONE}
+	SWITCH_ST   = &Status{Tipo: SWITCH, Resultado: OBJ_NONE}
+)
+
+type Status struct {
+	Tipo      TipoStatus
+	Resultado ObjetoBase
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func geraErro(erro string) ObjetoBase {
-	return &ObjErro{Mensagem: erro}
+	return &ObjExcessao{Mensagem: erro}
 }
 
 //comecamos implementando os numeros
@@ -149,16 +149,18 @@ type ObjTexto struct {
 	Valor string
 }
 
-func (ot *ObjTexto) Tipo() TipoObjeto      { return TEXTO }
-func (ot *ObjTexto) Inspecionar() string   { return ot.Valor }
-func (ot *ObjTexto) OpPrefixo(op string) ObjetoBase { return geraErro("Strings não suportam prefixos") }
-func (ot *ObjTexto) OpInfixo(op string,direita ObjetoBase) ObjetoBase {
-	switch  op {
+func (ot *ObjTexto) Tipo() TipoObjeto    { return TEXTO }
+func (ot *ObjTexto) Inspecionar() string { return ot.Valor }
+func (ot *ObjTexto) OpPrefixo(op string) ObjetoBase {
+	return geraErro("Strings não suportam prefixos")
+}
+func (ot *ObjTexto) OpInfixo(op string, direita ObjetoBase) ObjetoBase {
+	switch op {
 	case "+":
-		return &ObjTexto{Valor: ot.Valor+direita.Inspecionar()}
+		return &ObjTexto{Valor: ot.Valor + direita.Inspecionar()}
 
 	case "[":
-		valor,ok := direita.(*ObjInteiro)
+		valor, ok := direita.(*ObjInteiro)
 
 		if !ok {
 			return geraErro("O indexador de strings deve ser um inteiro")
@@ -166,18 +168,18 @@ func (ot *ObjTexto) OpInfixo(op string,direita ObjetoBase) ObjetoBase {
 
 		pos := valor.Valor
 
-		return &ObjTexto{Valor: fmt.Sprintf("%c",ot.Valor[pos])}
+		return &ObjTexto{Valor: fmt.Sprintf("%c", ot.Valor[pos])}
 	}
 
-	return geraErro(fmt.Sprintf("Opercao %s nao suportada por strings",op))
+	return geraErro(fmt.Sprintf("Opercao %s nao suportada por strings", op))
 }
 func (ot *ObjTexto) GetPropriedade(propri string) ObjetoBase {
-	return geraErro(fmt.Sprintf("Propriedade %s não encontrada",propri))
+	return geraErro(fmt.Sprintf("Propriedade %s não encontrada", propri))
 }
 func (ot *ObjTexto) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
-	return geraErro(fmt.Sprintf("Propriedade %s não encontrada",propri))
+	return geraErro(fmt.Sprintf("Propriedade %s não encontrada", propri))
 }
-func (ot *ObjTexto) SetIndex(index ObjetoBase,valor ObjetoBase) ObjetoBase {
+func (ot *ObjTexto) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 	return geraErro("Nao e possivel alterar uma posicao de uma string")
 }
 
@@ -299,60 +301,23 @@ func (oe *ObjNone) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
 
 //implementando dois objetos usados internamente
 
-type ObjReturn struct {
-	Valor ObjetoBase
-}
-
-func (or *ObjReturn) Tipo() TipoObjeto    { return VALOR_RETORNO }
-func (or *ObjReturn) Inspecionar() string { return or.Valor.Inspecionar() }
-func (or *ObjReturn) OpInfixo(op string, dir ObjetoBase) ObjetoBase {
-	return geraErro("Nao sei como voce gerou esse erro, mas se conseguiu, parabens")
-}
-func (or *ObjReturn) OpPrefixo(op string) ObjetoBase {
-	return geraErro("Nao sei como voce gerou esse erro, mas se conseguiu, parabens")
-}
-func (oe *ObjReturn) GetPropriedade(propri string) ObjetoBase {
-	return geraErro("")
-}
-func (oe *ObjReturn) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
-	return geraErro("")
-}
-
-type ObjInstrucao struct {
-	Instru string
-}
-func (ob *ObjInstrucao) Tipo() TipoObjeto { return INSTRUCAO }
-func (ob *ObjInstrucao) Inspecionar() string { return ob.Instru }
-func (ob *ObjInstrucao) OpInfixo(op string,dir ObjetoBase) ObjetoBase {
-	return OBJ_NONE
-}
-func (ob *ObjInstrucao) OpPrefixo(op string) ObjetoBase {
-	return OBJ_NONE
-}
-func (ob *ObjInstrucao) GetPropriedade(propri string) ObjetoBase {
-	return OBJ_NONE
-}
-func (ob *ObjInstrucao) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
-	return OBJ_NONE
-}
-
-type ObjErro struct {
+type ObjExcessao struct {
 	Mensagem string
 	Objeto   ObjetoBase
 }
 
-func (oe *ObjErro) Tipo() TipoObjeto    { return ERRO }
-func (oe *ObjErro) Inspecionar() string { return oe.Mensagem }
-func (oe *ObjErro) OpInfixo(operador string, direita ObjetoBase) ObjetoBase {
+func (oe *ObjExcessao) Tipo() TipoObjeto    { return EXCECAO }
+func (oe *ObjExcessao) Inspecionar() string { return oe.Mensagem }
+func (oe *ObjExcessao) OpInfixo(operador string, direita ObjetoBase) ObjetoBase {
 	return geraErro("Objetos do tipo ERRO nao realizam operacoes")
 }
-func (oe *ObjErro) OpPrefixo(op string) ObjetoBase {
+func (oe *ObjExcessao) OpPrefixo(op string) ObjetoBase {
 	return geraErro("Objetos do tipo ERRO nao realizam operacoes")
 }
-func (oe *ObjErro) GetPropriedade(propri string) ObjetoBase {
+func (oe *ObjExcessao) GetPropriedade(propri string) ObjetoBase {
 	return geraErro("")
 }
-func (oe *ObjErro) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
+func (oe *ObjExcessao) SetPropriedade(propri string, obj ObjetoBase) ObjetoBase {
 	return geraErro("")
 }
 

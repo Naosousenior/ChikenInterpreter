@@ -3,8 +3,8 @@ package objetos
 type Ambiente struct {
 	variaveis map[string]ObjetoBase
 	externo   *Ambiente
-	Classe *Classe
-	Objeto *ObjetoUser
+	Classe    *Classe
+	Objeto    *ObjetoUser
 }
 
 func NewAmbiente() *Ambiente {
@@ -30,7 +30,7 @@ func (a *Ambiente) GetVar(nome string) (ObjetoBase, bool) {
 	return res, ok
 }
 
-func (a *Ambiente) AddArgs(nome string,valor ObjetoBase) {
+func (a *Ambiente) AddArgs(nome string, valor ObjetoBase) {
 	a.variaveis[nome] = valor
 }
 
@@ -40,7 +40,7 @@ func (a *Ambiente) CriaVar(nome string, variavel ObjetoBase) ObjetoBase {
 		return OBJ_NONE
 	}
 
-	return &ObjErro{Mensagem: "Variavel " + nome + " ja existente."}
+	return &ObjExcessao{Mensagem: "Variavel " + nome + " ja existente."}
 }
 
 func (a *Ambiente) SetVar(ref string, variavel ObjetoBase) bool {

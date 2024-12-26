@@ -1,23 +1,17 @@
-var pessoa = class {
-    nome = 'Joao pessoa',
-    get_doencas_cu = fn() {return object.doencas_cu; }
-    
-    protected
-    CPF = 07569820304,
+var maior_que = fn(a,b) {
+    if(a>b) {
+        return true;
+    }
 
-    private
-    doencas_cu = ['hemorroida','oxiuriase']
+    return false;
 };
 
-var funcionario = class(pessoa) {
-    carteira = 1000,
+var cria_array = fn(inicio,fim) {
+    inicio -= 1;
+    var array = repeat(inicio<fim) {
+        inicio +=1 ;
+        inicio;
+    };
 
-    get_doencas = fn() { return object.doencas_cu;},
-    get_cpf = fn() {return object.CPF;}
-
-    protected
-    salario = 0.0,
-    nivel_preguica = 0.9
+    return array;
 };
-
-var aline = funcionario();

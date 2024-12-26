@@ -98,9 +98,9 @@ func ModoInterativo() {
 						continue
 					}
 
-					resultado := evaluation.Avaliar(programa, ambiente)
+					resultado := evaluation.AvaliaInstrucao(programa, ambiente)
 					if resultado != nil {
-						fmt.Println(resultado.Inspecionar())
+						fmt.Println(resultado.Resultado.Inspecionar())
 					} else {
 						fmt.Println("Entrada invalida, tente outra coisa")
 					}
@@ -126,12 +126,12 @@ func ModoInterativo() {
 			continue
 		}
 
-		resultado := evaluation.Avaliar(programa, ambiente)
+		resultado := evaluation.AvaliaInstrucao(programa, ambiente)
 		if resultado == nil {
 			fmt.Println("Algo deu errado")
 			continue
 		}
-		fmt.Println(resultado.Inspecionar())
+		fmt.Println(resultado.Resultado.Inspecionar())
 	}
 }
 

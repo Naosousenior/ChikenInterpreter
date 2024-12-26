@@ -16,7 +16,7 @@ func avaliaAtribuicao(operador string, receptor arv.Expressao, novoValor obj.Obj
 
 		if ok {
 			novoValor = avaliaOperadorAtribuicao(operador, novoValor, velhoValor)
-			if novoValor.Tipo() == obj.ERRO {
+			if novoValor.Tipo() == obj.EXCECAO {
 				return novoValor
 			}
 			ambiente.SetVar(expr.Nome, novoValor)
@@ -28,8 +28,8 @@ func avaliaAtribuicao(operador string, receptor arv.Expressao, novoValor obj.Obj
 	case *arv.ExpressaoAtributo:
 		var ok bool
 
-		objeto := Avaliar(expr.Expres, ambiente)
-		if objeto.Tipo() == obj.ERRO {
+		objeto := AvaliaExpressao(expr.Expres, ambiente)
+		if objeto.Tipo() == obj.EXCECAO {
 			return objeto
 		}
 
@@ -43,7 +43,7 @@ func avaliaAtribuicao(operador string, receptor arv.Expressao, novoValor obj.Obj
 
 		novoValor = avaliaOperadorAtribuicao(operador, novoValor, velhoValor)
 
-		if novoValor.Tipo() == obj.ERRO {
+		if novoValor.Tipo() == obj.EXCECAO {
 			return novoValor
 		}
 
@@ -55,26 +55,26 @@ func avaliaAtribuicao(operador string, receptor arv.Expressao, novoValor obj.Obj
 
 	case *arv.ExpressaoInfixo:
 		if expr.Operador == "[" {
-			obj_aux := Avaliar(expr.ExpEsquerda, ambiente)
+			obj_aux := AvaliaExpressao(expr.ExpEsquerda, ambiente)
 			objeto, ok := obj_aux.(obj.ObjetoIndexavel)
 			if !ok {
 				return geraErro(fmt.Sprintf("Objeto %s não indexável", obj_aux.Inspecionar()))
 			}
 
-			index := Avaliar(expr.ExpDireita, ambiente)
+			index := AvaliaExpressao(expr.ExpDireita, ambiente)
 
-			if objeto.Tipo() == obj.ERRO {
+			if objeto.Tipo() == obj.EXCECAO {
 				return objeto
 			}
 
-			if index.Tipo() == obj.ERRO {
+			if index.Tipo() == obj.EXCECAO {
 				return objeto
 			}
 
 			velhoValor := objeto.OpInfixo("[", index)
 			novoValor = avaliaOperadorAtribuicao(operador, novoValor, velhoValor)
 
-			if novoValor.Tipo() == obj.ERRO {
+			if novoValor.Tipo() == obj.EXCECAO {
 				return novoValor
 			}
 
@@ -92,7 +92,7 @@ func avaliaOperadorAtribuicao(op string, novoValor, velhoValor obj.ObjetoBase) o
 	if op == lexing.RECEBE {
 		return novoValor
 	} else if op == lexing.TIPO_RECEBE {
-		if velhoValor.Tipo() == obj.ERRO {
+		if velhoValor.Tipo() == obj.EXCECAO {
 			return velhoValor
 		}
 
@@ -103,7 +103,7 @@ func avaliaOperadorAtribuicao(op string, novoValor, velhoValor obj.ObjetoBase) o
 		}
 	} else {
 
-		if velhoValor.Tipo() == obj.ERRO {
+		if velhoValor.Tipo() == obj.EXCECAO {
 			return velhoValor
 		}
 		novoValor = velhoValor.OpInfixo(op[0:1], novoValor)
@@ -111,66 +111,66 @@ func avaliaOperadorAtribuicao(op string, novoValor, velhoValor obj.ObjetoBase) o
 	}
 }
 
-func avaliaIter(noIter *arv.InstrucaoIter, ambiente *obj.Ambiente) obj.ObjetoBase {
+func avaliaIter(noIter *arv.InstrucaoIter, ambiente *obj.Ambiente) *obj.Status {
 	var ok bool
 	var lista obj.ObjetoIndexavel
 	iterador := noIter.Iterador.Nome
 	blocoCodigo := noIter.BlocoCodigo
-	objeto := Avaliar(noIter.ExpressaoLista, ambiente)
+	objeto := AvaliaExpressao(noIter.ExpressaoLista, ambiente)
 
 	if lista, ok = objeto.(obj.ObjetoIndexavel); !ok {
-		return geraErro("Instrução de iteração precisa de um objeto iteravel")
+		return status(obj.ERROR,geraErro("Instrução de iteração precisa de um objeto iteravel"))
 	}
 
 	count := 0
 	novoAmbiente := obj.NewAmbienteInterno(ambiente)
-	if objeto = novoAmbiente.CriaVar(iterador, obj.OBJ_NONE); objeto.Tipo() == obj.ERRO {
-		return objeto
+	if objeto = novoAmbiente.CriaVar(iterador, obj.OBJ_NONE); objeto.Tipo() == obj.EXCECAO {
+		return status(obj.ERROR,objeto)
 	}
 
-	var valorAtual obj.ObjetoBase = obj.OBJ_NONE
+	var statusAtual *obj.Status
 
 	for {
-		valorAtual = lista.Iterar(count)
-		if valorAtual == obj.OBJ_BREAK {
+		statusAtual = lista.Iterar(count)
+		if statusAtual == obj.BREAK_ST {
 			break
 		}
 
-		novoAmbiente.SetVar(iterador, valorAtual)
+		novoAmbiente.SetVar(iterador, statusAtual.Resultado)
 		count++
 
-		objeto = avaliaInstrucoes(blocoCodigo.Instrucoes, novoAmbiente)
+		statusAux := avaliaInstrucoes(blocoCodigo.Instrucoes, novoAmbiente)
 
-		if objeto.Tipo() == obj.ERRO || objeto.Tipo() == obj.VALOR_RETORNO {
-			return objeto
+		if statusAux.Tipo == obj.ERROR || statusAux.Tipo == obj.RETURN {
+			return statusAux
 		}
 
-		if objeto == obj.OBJ_BREAK {
+		if statusAux == obj.BREAK_ST {
 			break
 		}
 	}
 
-	return obj.OBJ_NONE
+	return obj.ITER_ST
 }
 
-func avaliaSwitch(noSwitch *arv.InstrucaoSwitch, ambiente *obj.Ambiente) obj.ObjetoBase {
+func avaliaSwitch(noSwitch *arv.InstrucaoSwitch, ambiente *obj.Ambiente) *obj.Status {
 	casos := noSwitch.Cases
 	var valorCaso obj.ObjetoBase
 	var hash string
 
-	valorCambio := Avaliar(noSwitch.ExpreTeste,ambiente)
+	valorCambio := AvaliaExpressao(noSwitch.ExpreTeste,ambiente)
 
-	if valorCambio.Tipo() == obj.ERRO {
-		return valorCambio
+	if valorCambio.Tipo() == obj.EXCECAO {
+		return status(obj.ERROR,valorCambio)
 	}
 
 	mapaDeCasos := make(map[string]*arv.BlocoInstrucao)
 
 	for i, caso := range casos {
-		valorCaso = Avaliar(caso.ExpreCase,ambiente)
+		valorCaso = AvaliaExpressao(caso.ExpreCase,ambiente)
 
-		if valorCaso.Tipo() == obj.ERRO {
-			return valorCaso
+		if valorCaso.Tipo() == obj.EXCECAO {
+			return status(obj.ERROR,valorCaso)
 		}
 
 		hash = FalsoHash(valorCaso)
@@ -182,7 +182,7 @@ func avaliaSwitch(noSwitch *arv.InstrucaoSwitch, ambiente *obj.Ambiente) obj.Obj
 
 	if !ok {
 		if noSwitch.BlocoDefault == nil {
-			return obj.OBJ_NONE
+			return obj.SWITCH_ST
 		}
 
 		return avaliaInstrucoes(noSwitch.BlocoDefault.Instrucoes,ambiente)

@@ -58,6 +58,8 @@ func (bi *BlocoInstrucao) GetInformacao() string {
 type Programa struct {
 	Instrucoes []Instrucao
 }
+func (p *Programa) noInstrucao() {}
+func (p *Programa) IncProfu() {}
 
 func (p *Programa) GetTokenNo() lex.Token {
 	if len(p.Instrucoes) > 0 {

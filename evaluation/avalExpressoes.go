@@ -13,11 +13,9 @@ func chamaFuncao(funcao *obj.ObjFuncao, argumentos []obj.ObjetoBase) obj.ObjetoB
 
 	resultado := avaliaInstrucoes(funcao.BlocoInstrucoes.Instrucoes, novoAmb)
 
-	if retorno, ok := resultado.(*obj.ObjReturn); ok {
+	if resultado.Tipo == obj.RETURN || resultado.Tipo == obj.ERROR {
 
-		return retorno.Valor
-	} else if resultado.Tipo() == obj.ERRO {
-		return resultado
+		return resultado.Resultado
 	} else {
 		return obj.OBJ_NONE
 	}
@@ -30,11 +28,9 @@ func chamaMetodo(metodo *obj.Metodo, argumentos []obj.ObjetoBase) obj.ObjetoBase
 	novoAmb.Classe = metodo.Classe
 	resultado := avaliaInstrucoes(metodo.Funcao.BlocoInstrucoes.Instrucoes, novoAmb)
 
-	if retorno, ok := resultado.(*obj.ObjReturn); ok {
+	if resultado.Tipo == obj.RETURN || resultado.Tipo == obj.ERROR {
 
-		return retorno.Valor
-	} else if resultado.Tipo() == obj.ERRO {
-		return resultado
+		return resultado.Resultado
 	} else {
 		return obj.OBJ_NONE
 	}
@@ -59,7 +55,7 @@ func avaliaChamada(noCall *arv.CallFun, objeto obj.ObjetoBase, ambiente *obj.Amb
 	}
 
 	if len(args) > 0 {
-		if args[0].Tipo() == obj.ERRO {
+		if args[0].Tipo() == obj.EXCECAO {
 			return args[0]
 		}
 	}
@@ -173,14 +169,14 @@ func avaliaDict(expressao *arv.ExpressaoDict, ambiente *obj.Ambiente) obj.Objeto
 	i := 0
 
 	for i < len(expressao.Chaves) {
-		key = Avaliar(expressao.Chaves[i], ambiente)
-		value = Avaliar(expressao.Valores[i], ambiente)
+		key = AvaliaExpressao(expressao.Chaves[i], ambiente)
+		value = AvaliaExpressao(expressao.Valores[i], ambiente)
 
-		if key.Tipo() == obj.ERRO {
+		if key.Tipo() == obj.EXCECAO {
 			return key
 		}
 
-		if value.Tipo() == obj.ERRO {
+		if value.Tipo() == obj.EXCECAO {
 			return value
 		}
 
@@ -211,9 +207,9 @@ func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.Obje
 	}
 
 	for propriedade, exprV := range expressao.Atributos {
-		valor = Avaliar(exprV, ambiente)
+		valor = AvaliaExpressao(exprV, ambiente)
 
-		if valor.Tipo() == obj.ERRO {
+		if valor.Tipo() == obj.EXCECAO {
 			return nil, valor
 		}
 
@@ -320,7 +316,7 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 	var construtor *obj.Metodo = nil
 
 	for chave, valor := range expreClasse.AtribPub {
-		atributo := Avaliar(valor, ambiente)
+		atributo := AvaliaExpressao(valor, ambiente)
 
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
 			//o nome de atributo "new_object"
@@ -335,7 +331,7 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 
 			atributo = newMetodo(modelo.ClasseMae, metodo)
 
-		} else if atributo.Tipo() == obj.ERRO {
+		} else if atributo.Tipo() == obj.EXCECAO {
 			return atributo, nil
 		}
 
@@ -343,11 +339,11 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 	}
 
 	for chave, valor := range expreClasse.AtribPro {
-		atributo := Avaliar(valor, ambiente)
+		atributo := AvaliaExpressao(valor, ambiente)
 
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
 			atributo = newMetodo(modelo.ClasseMae, metodo)
-		} else if atributo.Tipo() == obj.ERRO {
+		} else if atributo.Tipo() == obj.EXCECAO {
 			return atributo, nil
 		}
 
@@ -356,11 +352,11 @@ func addAtributosAtuais(modelo *obj.ObjetoUser, expreClasse *arv.ExpressaoClass,
 
 	modelo.Privadas[modelo.ClasseMae] = make(obj.Propriedades)
 	for chave, valor := range expreClasse.AtribPriv {
-		atributo := Avaliar(valor, ambiente)
+		atributo := AvaliaExpressao(valor, ambiente)
 
 		if metodo, ok := atributo.(*obj.ObjFuncao); ok {
 			atributo = newMetodo(modelo.ClasseMae, metodo)
-		} else if atributo.Tipo() == obj.ERRO {
+		} else if atributo.Tipo() == obj.EXCECAO {
 			return atributo, nil
 		}
 
@@ -407,9 +403,9 @@ func getAtributosClasse(expreClass *arv.ExpressaoClass, superClasses []*obj.Clas
 	}
 
 	for chave, expre := range expreClass.AtribClass {
-		atributo := Avaliar(expre, amb)
+		atributo := AvaliaExpressao(expre, amb)
 
-		if atributo.Tipo() == obj.ERRO {
+		if atributo.Tipo() == obj.EXCECAO {
 			return nil, atributo
 		}
 

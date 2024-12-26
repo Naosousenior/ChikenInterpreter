@@ -157,12 +157,12 @@ func (l *ObjArray) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 		return geraErro("Listas sao enumeradas, o indexador precisa ser um inteiro.")
 	}
 }
-func (l *ObjArray) Iterar(pos int) ObjetoBase {
+func (l *ObjArray) Iterar(pos int) *Status {
 	if pos < l.Tamanho {
-		return l.ArrayList[pos]
+		return &Status{Tipo: EXPRESSAO,Resultado: l.ArrayList[pos]}
 	}
 
-	return OBJ_BREAK
+	return BREAK_ST
 }
 
 type ObjDict struct {
@@ -278,12 +278,12 @@ func (obj *ObjDict) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 
 	return OBJ_NONE
 }
-func (obj *ObjDict) Iterar(index int) ObjetoBase {
+func (obj *ObjDict) Iterar(index int) *Status {
 	if index >= len(obj.Chaves) {
-		return OBJ_BREAK
+		return BREAK_ST
 	}
 
-	return obj.Dict[obj.Chaves[index]]
+	return &Status{Tipo: EXPRESSAO, Resultado: obj.Dict[obj.Chaves[index]]}
 }
 
 type Classe struct {
