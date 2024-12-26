@@ -1,11 +1,3 @@
-var maior_que = fn(a,b) {
-    if(a>b) {
-        return true;
-    }
-
-    return false;
-};
-
 var cria_array = fn(inicio,fim) {
     inicio -= 1;
     var array = repeat(inicio<fim) {
@@ -14,4 +6,28 @@ var cria_array = fn(inicio,fim) {
     };
 
     return array;
+};
+
+var maior_que = if (a>b) {
+    a;
+} else {
+    b;
+};
+
+var pessoa = class {
+    nome = 'joaozinho',
+
+    new_object = fn(nome,cpf) {
+        object.nome = nome;
+        object.cpf = cpf;
+    }
+
+    get_cpf = fn(autoridade) {
+        return if(autoridade>4) {
+            object.cpf;
+        };
+    }
+
+    protected
+    cpf = 0
 };

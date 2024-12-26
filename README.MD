@@ -1,3 +1,4 @@
+
 # APRENDENDO A DESENVOLVER UM INTERPRETADOR  
 
 Este interpretador foi desenvolvido com auxílio do livro "Writing a interpreter in Go", de Thorsten Ball.
@@ -56,6 +57,21 @@ var <nome1> = <expressao1>,
 <nome2> = <expressao2>,
 <nome3>,
 <nome4> = <expressao3>;
+```
+
+### Funções
+Funções são um tipo especial de variável. Afinal, elas podem carregar código dentro de si. Em ChikenLang, todas as função são de ordem superior, ou seja, ela podem ser passadas como parâmetro de outras funções, ou podem ser retornadas por funções.
+Para definir uma função, basta utilizar a palavra chave `fn`:
+```
+var funcao = fn(<parametros>) {
+	<comandos>
+};
+```
+Para retornar um valor em uma função, use a instrução `return`:
+```
+var funcao = fn(<parametros>) {
+	return <valor>;
+};
 ```
 ## Estruturas de blocos
 Talvez essa seja a parte mais interessante. Existem 4 estruturas na linguagem até agora (ainda quero implementar algumas outras). São elas:
@@ -124,5 +140,88 @@ repeat {
     <comandos>
 }
 ```
-As condições omitidas terão valor `true` por padrão. As instruções `break`, `continue` e `return` modificam o ciclo natural do repeat. `break` e `return` saem do looping, enquanto `continue` pula do comando do bloco para o próximo teste da condição 2.  
-Finalmente, `repeat` assim como `if` também pode retornar um objeto, e ser usado como expressões. No caso, `repeat` retorna uma lista, com os valores das últimas instruções de expressões de cada loop.
+As condições omitidas terão valor `true` por padrão. As instruções `break`, `continue` e `return` modificam o ciclo natural do `repeat`. `break` e `return` saem do looping, enquanto `continue` pula do comando do bloco para o próximo teste da condição 2.  
+Finalmente, `repeat` assim como `if` também pode retornar um objeto, e ser usado como expressões. No caso, `repeat` retorna uma lista, com os valores produzidos pelo bloco de código a cada iteração. Então, por exemplo, o código a seguir produz um array de 0 a 9:
+```
+var inicio = -1;
+var array = repeat(inicio<9) {
+    inicio +=1 ;
+    inicio;
+};
+```
+### Iter
+Instrução de iteração em objetos iteráveis. Por exemplo, um array é iterável. Um exemplo está a seguir:
+```
+iter(<iterador> : <iteravel>) {
+    <comandos>
+}
+```
+Arrays e dicts internos da linguagem são exemplos de objetos iteráveis.
+### Switch
+Instrução de seleção de casos. Uma expressão pode ser avaliada para gerar um valor que será utilizado para avançar para cada caso:
+```
+switch(<expressao>) {
+    <caso1> {
+	    <codigo>
+    }
+    <caso2> {
+	    <codigo>
+	}
+	...
+}
+```
+Em teoria, era pra ser bem leve. Mas provavelmente será lento pra caramba, recomendo fortemente você buscar algum método alternativo.
+
+## Orientação a objetos
+Chiken Lang é uma linguagem orientada a objetos, e isso foi um desafio pessoal. Como tal, ela implementa encapsulamento, herança múltipla, e obviamente, polimorfismo e instanciação de objetos. Antes de mais nada, em Chiken Lang um objeto pode ser criado sem necessariamente ter uma classe, por meio da palavra chave `object`:
+```
+var objeto = object {
+	attrib1 = <value1>,
+	attrib2 = <value2>
+};
+```
+se você fizer assim, o objeto será basicamente uma estrutura. Funções definidas dentro dele serão métodos, no entanto, será impossível fazer encapsulamento, além de definir um construtor. Na verdade, um objeto assim será único, a menos que você o copie, e não vejo porque fazer isso. Este recurso é útil para o caso de você querer um objeto único que faça alguma coisa, sem usar Singleton.  
+Para criar uma classe, use a palavra chave `class`:
+```
+var classe = class(<lista de super classes>) {
+	<atributos>
+};
+```
+Os atributos serão definidos da mesma forma que no caso do comando `object`, no entanto, modificadores de encapsulamento podem ser usados:
+```
+var classe = class(<lista de super classes>) {
+	public
+	<atributos publicos>
+	
+	protected
+	<atributos protegidos>
+	
+	private
+	<atributos privados>
+	
+	class
+	<atributos de classe>
+};
+```
+atributos de classe não fazem parte do encapsulamento, obviamente, eles são exatamente o que foi descrito: um atributo que pertence a classe, e que portanto, não será atribuído aos objetos instanciados por aquela classe.  
+Atributos públicos podem ser acessados por qualquer um.  
+Atributos protegidos podem ser acessados pela própria classe e por classes filhas.  
+Atributos privados só podem ser acessados pela própria classe.  
+O modificador padrão é `public`.  
+Um método é definido ao se criar um atributo que guarda uma função:
+```
+var classe = class(<lista de super classes>) {
+	metodo = fn(<parametros>) {
+		<comandos>
+	},
+};
+```
+Um método especial é o construtor, ele deve possuir o nome `new_object` e ser público:
+```
+var classe = class(<lista de super classes>) {
+	new_object = fn(<parametros>) {
+		<comandos>
+	},
+};
+```
+Como foi citado, em Chiken Lang existe herança múltipla, e sobre isso, é importante ter em mente que a ordem de prioridade dos atributos é da primeira classe passada para a última. Ou seja, supondo que duas classes herdadas tenham um atributo de mesmo nome, a classe mais a esquerda será priorizada em relação a mais a direita.

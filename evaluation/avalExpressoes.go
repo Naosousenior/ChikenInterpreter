@@ -80,14 +80,20 @@ func avaliaChamada(noCall *arv.CallFun, objeto obj.ObjetoBase, ambiente *obj.Amb
 
 
 		//primeiro, verificamos se o construtor da classe foi definido pelo usuário
+		novo_objeto := instanciarNovoObjeto(objeto)
 		if objeto.Construtor != nil {
 			construtor := objeto.Construtor
-			construtor.Objeto = instanciarNovoObjeto(objeto)
+			construtor.Objeto = novo_objeto
 			
-			return chamaMetodo(construtor,args)
+			resultado := chamaMetodo(construtor,args)
+
+			if resultado.Tipo() == obj.EXCECAO {
+				return resultado
+			}
 		}
 
-		return instanciarNovoObjeto(objeto)
+		return novo_objeto
+		
 	default:
 		return geraErro(fmt.Sprintf("O objeto %s não pode ser chamado", objeto.Inspecionar()))
 	}
