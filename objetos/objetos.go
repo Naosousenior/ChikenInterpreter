@@ -65,6 +65,8 @@ var (
 	CONTINUE_ST = &Status{Tipo: CONTINUE, Resultado: OBJ_NONE}
 	ITER_ST     = &Status{Tipo: ITERACAO, Resultado: OBJ_NONE}
 	SWITCH_ST   = &Status{Tipo: SWITCH, Resultado: OBJ_NONE}
+	DECLARACAO_ST = &Status{Tipo: DECLARACAO,Resultado: OBJ_NONE}
+	DEFINICAO_ST = &Status{Tipo: DEFINICAO,Resultado: OBJ_NONE}
 )
 
 type Status struct {

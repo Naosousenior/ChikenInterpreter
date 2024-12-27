@@ -2,15 +2,16 @@ package objetos
 
 type Ambiente struct {
 	variaveis map[string]ObjetoBase
+	definicoes map[string]ObjetoBase
 	externo   *Ambiente
 	Classe    *Classe
 	Objeto    *ObjetoUser
 }
 
 func NewAmbiente() *Ambiente {
-	vars := make(map[string]ObjetoBase)
 
-	return &Ambiente{variaveis: vars}
+
+	return &Ambiente{externo: nil,variaveis: make(map[string]ObjetoBase),definicoes: make(map[string]ObjetoBase)}
 }
 
 func NewAmbienteInterno(amb *Ambiente) *Ambiente {
@@ -20,14 +21,67 @@ func NewAmbienteInterno(amb *Ambiente) *Ambiente {
 	return novo
 }
 
-func (a *Ambiente) GetVar(nome string) (ObjetoBase, bool) {
-	res, ok := a.variaveis[nome]
+func (a *Ambiente) existeExterno() bool {
+	return a.externo != nil
+}
 
-	if !ok && a.externo != nil {
-		res, ok = a.externo.GetVar(nome)
+func (a *Ambiente) existeAqui(nome string) bool {
+	_,ok1 := a.variaveis[nome]
+	_,ok2 := a.definicoes[nome]
+
+	return ok1 || ok2
+}
+
+//fragmentei essa tarefa em 3 funcoes
+func (a *Ambiente) existe(nome string) bool {
+	if a.existeAqui(nome) {
+		return true
 	}
 
-	return res, ok
+	if !a.existeExterno() {
+		return false
+	}
+
+	return a.externo.existeAqui(nome) 
+}
+
+func (a *Ambiente) eAtribuivel(nome string) bool {
+	_,ok := a.definicoes[nome]
+
+	if ok { //se existe nas definicoes do escopo atual, ja nao pode ser reatribuido
+		return false
+	}
+
+	if a.existeExterno() { //se nao existe, vai verificar no escopo exterior
+		return a.externo.eAtribuivel(nome)
+	}
+
+	return true //se nao existe um escopo exterior, pode ser reatribuido
+	//nao verifica e existencia da variavel
+}
+
+func (a *Ambiente) get_var(nome string) ObjetoBase {
+	//primeiro, tenta pegar entre as variaveis
+	if res_var,ok_var := a.variaveis[nome]; ok_var {
+		return res_var
+	}
+
+	//depois, entre as definicoes
+	if res_def,ok_def := a.definicoes[nome]; ok_def {
+		return res_def
+	}
+
+	//como temos certeza que existe, vamos tentar no ambiente exterior
+	return a.externo.get_var(nome)
+}
+
+func (a *Ambiente) GetVar(nome string) (ObjetoBase, bool) {
+	if !a.existe(nome) { //verifica a existencia da variavel
+		return nil,false
+	}
+
+	//se passou do teste anterior, e porque existe, nao tem porque temer um erro
+	return a.get_var(nome),true
 }
 
 func (a *Ambiente) AddArgs(nome string, valor ObjetoBase) {
@@ -35,7 +89,7 @@ func (a *Ambiente) AddArgs(nome string, valor ObjetoBase) {
 }
 
 func (a *Ambiente) CriaVar(nome string, variavel ObjetoBase) ObjetoBase {
-	if _, ok := a.GetVar(nome); !ok {
+	if !a.existe(nome) {
 		a.variaveis[nome] = variavel
 		return OBJ_NONE
 	}
@@ -43,18 +97,28 @@ func (a *Ambiente) CriaVar(nome string, variavel ObjetoBase) ObjetoBase {
 	return &ObjExcessao{Mensagem: "Variavel " + nome + " ja existente."}
 }
 
-func (a *Ambiente) SetVar(ref string, variavel ObjetoBase) bool {
-	if a.externo != nil {
-		if a.externo.SetVar(ref, variavel) {
-			return true
-		} else if _, ok := a.GetVar(ref); ok {
-			a.variaveis[ref] = variavel
-			return true
-		}
-
+func (a *Ambiente) DefVar(nome string, variavel ObjetoBase) bool {
+	if a.existe(nome) {
 		return false
-	} else if _, ok := a.GetVar(ref); ok {
+	}
+
+	a.definicoes[nome] = variavel
+	return true
+}
+
+func (a *Ambiente) set_var(ref string,variavel ObjetoBase) {
+	if a.existeAqui(ref) {
 		a.variaveis[ref] = variavel
+		return
+	}
+
+	a.externo.set_var(ref,variavel) //se essa funcao foi chamada, e porque a referencia existe
+	//se ela existe, mas não existe no escopo atual, deve estar no escopo exterior, que por sua vez, deve existir
+}
+
+func (a *Ambiente) SetVar(ref string, variavel ObjetoBase) bool {
+	if a.existe(ref) && a.eAtribuivel(ref) { //se passou, é porque existe e pode ser modificado
+		a.set_var(ref,variavel)
 		return true
 	}
 

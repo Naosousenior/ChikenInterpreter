@@ -19,11 +19,13 @@ func avaliaAtribuicao(operador string, receptor arv.Expressao, novoValor obj.Obj
 			if novoValor.Tipo() == obj.EXCECAO {
 				return novoValor
 			}
-			ambiente.SetVar(expr.Nome, novoValor)
+			if !ambiente.SetVar(expr.Nome, novoValor) {
+				return geraErro(fmt.Sprintf("Variável %s não pode ser reatribuida",expr.Nome))
+			}
 
 			return obj.OBJ_NONE
 		} else {
-			return geraErro(fmt.Sprintf("Variavel %s nao declarada", expr.Nome))
+			return geraErro(fmt.Sprintf("Variavel %s nao declarada.", expr.Nome))
 		}
 	case *arv.ExpressaoAtributo:
 		var ok bool

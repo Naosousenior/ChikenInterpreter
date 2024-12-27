@@ -72,8 +72,21 @@ func AvaliaInstrucao(instrucao arv.Instrucao, ambiente *obj.Ambiente) *obj.Statu
 			}
 		}
 
-		return status(obj.DECLARACAO,obj.OBJ_NONE)
+		return obj.DECLARACAO_ST
+	
+	case *arv.DefInstrucao:
+		nome := no.Ident.Nome
+		valor := AvaliaExpressao(no.Expres,ambiente)
 
+		if valor.Tipo() == obj.EXCECAO {
+			return status(obj.ERROR,valor)
+		}
+
+		if ambiente.DefVar(nome,valor) {
+			return obj.DEFINICAO_ST
+		}
+
+		return status(obj.ERROR,geraErro(fmt.Sprintf("Objeto %s já existe no escopo.",nome)))
 	case *arv.InstrucaoIter:
 		return avaliaIter(no, ambiente)
 

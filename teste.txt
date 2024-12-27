@@ -1,4 +1,4 @@
-var cria_array = fn(inicio,fim) {
+def cria_array fn(inicio,fim) {
     inicio -= 1;
     var array = repeat(inicio<fim) {
         inicio +=1 ;
@@ -6,12 +6,6 @@ var cria_array = fn(inicio,fim) {
     };
 
     return array;
-};
-
-var maior_que = if (a>b) {
-    a;
-} else {
-    b;
 };
 
 var pessoa = class {

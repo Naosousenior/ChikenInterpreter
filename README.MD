@@ -59,6 +59,14 @@ var <nome1> = <expressao1>,
 <nome4> = <expressao3>;
 ```
 
+### Definição de variáveis
+Variáveis definidas não podem ser reatribuídas. Elas não são como constantes imutáveis, pois um objeto definido pode ser modificado
+por seus próprios métodos, mas o nome da variável não pode ser atribuído a um outro objeto, após definido. Isso é útil para definição de funções e classes. A sintaxe de uma definição é:
+
+```
+def <identificador> <valor>;
+```
+
 ### Funções
 Funções são um tipo especial de variável. Afinal, elas podem carregar código dentro de si. Em ChikenLang, todas as função são de ordem superior, ou seja, ela podem ser passadas como parâmetro de outras funções, ou podem ser retornadas por funções.
 Para definir uma função, basta utilizar a palavra chave `fn`:
