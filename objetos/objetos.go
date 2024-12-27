@@ -39,7 +39,7 @@ type ObjetoBase interface {
 type ObjetoIndexavel interface {
 	ObjetoBase
 	SetIndex(ObjetoBase, ObjetoBase) ObjetoBase
-	Iterar(int) *Status
+	Iterar() chan ObjetoBase
 }
 
 type TipoStatus int

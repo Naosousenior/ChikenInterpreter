@@ -171,7 +171,6 @@ func avaliaDict(expressao *arv.ExpressaoDict, ambiente *obj.Ambiente) obj.Objeto
 	var hash string
 
 	dict := make(map[string]obj.ObjetoBase)
-	chaves := make([]string, len(expressao.Chaves))
 	i := 0
 
 	for i < len(expressao.Chaves) {
@@ -189,12 +188,11 @@ func avaliaDict(expressao *arv.ExpressaoDict, ambiente *obj.Ambiente) obj.Objeto
 		hash = FalsoHash(key)
 
 		dict[hash] = value
-		chaves[i] = hash
 
 		i++
 	}
 
-	return &obj.ObjDict{Dict: dict, Chaves: chaves}
+	return &obj.ObjDict{Dict: dict}
 }
 
 func avaliaObject(expressao *arv.ExpressaoObjeto, classe *obj.Classe) (*obj.ObjetoUser, obj.ObjetoBase) {

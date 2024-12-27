@@ -247,7 +247,7 @@ func avaliaInstrucoes(instrucoes []arv.Instrucao, ambiente *obj.Ambiente) *obj.S
 		} else if resultado.Tipo == obj.ERROR {
 			fmt.Printf("Linha: %d\n", instrucao.GetTokenNo().Pos.Linha)
 			break
-		} else if resultado.Tipo == obj.BREAK || resultado.Tipo == obj.CONTINUE {
+		} else if resultado == obj.BREAK_ST || resultado == obj.CONTINUE_ST {
 			break
 		}
 	}

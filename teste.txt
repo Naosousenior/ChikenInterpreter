@@ -1,27 +1,5 @@
-def cria_array fn(inicio,fim) {
-    inicio -= 1;
-    var array = repeat(inicio<fim) {
-        inicio +=1 ;
-        inicio;
-    };
 
-    return array;
-};
 
-var pessoa = class {
-    nome = 'joaozinho',
-
-    new_object = fn(nome,cpf) {
-        object.nome = nome;
-        object.cpf = cpf;
-    }
-
-    get_cpf = fn(autoridade) {
-        return if(autoridade>4) {
-            object.cpf;
-        };
-    }
-
-    protected
-    cpf = 0
-};
+iter(num -> cria_array(0,100)) {
+    bff.write(num,'-');
+}

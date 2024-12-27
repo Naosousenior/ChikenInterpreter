@@ -157,17 +157,24 @@ func (l *ObjArray) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 		return geraErro("Listas sao enumeradas, o indexador precisa ser um inteiro.")
 	}
 }
-func (l *ObjArray) Iterar(pos int) *Status {
-	if pos < l.Tamanho {
-		return &Status{Tipo: EXPRESSAO,Resultado: l.ArrayList[pos]}
-	}
+func (l *ObjArray) Iterar() chan ObjetoBase {
+	channel_st := make(chan ObjetoBase)
 
-	return BREAK_ST
+	var index int = 0
+
+	go func() {
+		for index = 0; index < l.Tamanho; index++ {
+			channel_st <- l.ArrayList[index]
+		}
+
+		close(channel_st)
+	}()
+
+	return channel_st
 }
 
 type ObjDict struct {
 	Dict   map[string]ObjetoBase
-	Chaves []string
 }
 
 func (obj *ObjDict) Tipo() TipoObjeto { return DICT }
@@ -216,14 +223,7 @@ func (obj *ObjDict) OpInfixo(op string, dir ObjetoBase) ObjetoBase {
 				i++
 			}
 
-			i = 0
-			chaves := make([]string, len(novoMapa))
-			for chave := range novoMapa {
-				chaves[i] = chave
-				i++
-			}
-
-			return &ObjDict{Dict: novoMapa, Chaves: chaves}
+			return &ObjDict{Dict: novoMapa}
 		}
 
 		return geraErro("DICT suporta apenas adição com outra DICT")
@@ -270,20 +270,25 @@ func (obj *ObjDict) SetPropriedade(propriedade string, valor ObjetoBase) ObjetoB
 
 func (obj *ObjDict) SetIndex(index ObjetoBase, valor ObjetoBase) ObjetoBase {
 	hash := string(index.Tipo()) + ": " + index.Inspecionar()
-	if _, ok := obj.Dict[hash]; !ok {
-		obj.Chaves = append(obj.Chaves, hash)
-	}
 
 	obj.Dict[hash] = valor
 
 	return OBJ_NONE
 }
-func (obj *ObjDict) Iterar(index int) *Status {
-	if index >= len(obj.Chaves) {
-		return BREAK_ST
-	}
+func (obj *ObjDict) Iterar() chan ObjetoBase {
+	channel_st := make(chan ObjetoBase)
 
-	return &Status{Tipo: EXPRESSAO, Resultado: obj.Dict[obj.Chaves[index]]}
+	
+
+	go func() {
+		for _,valor := range obj.Dict {
+			channel_st <- valor
+		}
+
+		close(channel_st)
+	}()
+
+	return channel_st
 }
 
 type Classe struct {

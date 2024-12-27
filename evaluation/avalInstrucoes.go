@@ -114,45 +114,32 @@ func avaliaOperadorAtribuicao(op string, novoValor, velhoValor obj.ObjetoBase) o
 }
 
 func avaliaIter(noIter *arv.InstrucaoIter, ambiente *obj.Ambiente) *obj.Status {
-	var ok bool
-	var lista obj.ObjetoIndexavel
-	iterador := noIter.Iterador.Nome
-	blocoCodigo := noIter.BlocoCodigo
-	objeto := AvaliaExpressao(noIter.ExpressaoLista, ambiente)
+	objeto := AvaliaExpressao(noIter.ExpressaoLista,ambiente)
 
-	if lista, ok = objeto.(obj.ObjetoIndexavel); !ok {
-		return status(obj.ERROR,geraErro("Instrução de iteração precisa de um objeto iteravel"))
-	}
-
-	count := 0
-	novoAmbiente := obj.NewAmbienteInterno(ambiente)
-	if objeto = novoAmbiente.CriaVar(iterador, obj.OBJ_NONE); objeto.Tipo() == obj.EXCECAO {
+	if objeto.Tipo() == obj.EXCECAO {
 		return status(obj.ERROR,objeto)
 	}
 
-	var statusAtual *obj.Status
+	if iterado,ok := objeto.(obj.ObjetoIndexavel); ok {
+		iterador := noIter.Iterador.Nome
+		ambInterno := obj.NewAmbienteInterno(ambiente)
+		var resultado *obj.Status
+		for valor := range iterado.Iterar() {
+			ambInterno.AddArgs(iterador,valor)
 
-	for {
-		statusAtual = lista.Iterar(count)
-		if statusAtual == obj.BREAK_ST {
-			break
+			resultado = avaliaInstrucoes(noIter.BlocoCodigo.Instrucoes,ambInterno)
+
+			if resultado == obj.BREAK_ST {
+				break
+			} else if resultado.Tipo == obj.RETURN || resultado.Tipo == obj.ERROR {
+				return resultado
+			}
 		}
 
-		novoAmbiente.SetVar(iterador, statusAtual.Resultado)
-		count++
-
-		statusAux := avaliaInstrucoes(blocoCodigo.Instrucoes, novoAmbiente)
-
-		if statusAux.Tipo == obj.ERROR || statusAux.Tipo == obj.RETURN {
-			return statusAux
-		}
-
-		if statusAux == obj.BREAK_ST {
-			break
-		}
+		return obj.ITER_ST
 	}
 
-	return obj.ITER_ST
+	return status(obj.ERROR,geraErro(fmt.Sprintf("Objeto %s não pode ser iterado",objeto.Inspecionar())))
 }
 
 func avaliaSwitch(noSwitch *arv.InstrucaoSwitch, ambiente *obj.Ambiente) *obj.Status {
