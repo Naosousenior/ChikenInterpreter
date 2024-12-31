@@ -307,7 +307,13 @@ type ObjExcessao struct {
 }
 
 func (oe *ObjExcessao) Tipo() TipoObjeto    { return EXCECAO }
-func (oe *ObjExcessao) Inspecionar() string { return oe.Mensagem }
+func (oe *ObjExcessao) Inspecionar() string {
+	if oe.Objeto == nil {
+		return oe.Mensagem
+	}
+
+	return fmt.Sprintf("%s: %s",oe.Mensagem,oe.Objeto)
+}
 func (oe *ObjExcessao) OpInfixo(operador string, direita ObjetoBase) ObjetoBase {
 	return geraErro("Objetos do tipo ERRO nao realizam operacoes")
 }

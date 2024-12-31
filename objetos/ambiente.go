@@ -42,7 +42,7 @@ func (a *Ambiente) existe(nome string) bool {
 		return false
 	}
 
-	return a.externo.existeAqui(nome) 
+	return a.externo.existe(nome) 
 }
 
 func (a *Ambiente) eAtribuivel(nome string) bool {

@@ -38,7 +38,13 @@ func AvaliaInstrucao(instrucao arv.Instrucao, ambiente *obj.Ambiente) *obj.Statu
 			return status(obj.ERROR,novoValor)
 		}
 
-		return status(obj.ATRIBUICAO,avaliaAtribuicao(no.Operador, no.ExprRecebe, novoValor, ambiente))
+		resultado := avaliaAtribuicao(no.Operador, no.ExprRecebe, novoValor, ambiente)
+
+		if resultado.Tipo() == obj.EXCECAO {
+			return status(obj.ERROR,resultado)
+		}
+
+		return status(obj.ATRIBUICAO,resultado)
 
 	case *arv.ReturnInstrucao:
 		res := AvaliaExpressao(no.Expre, ambiente)
@@ -56,6 +62,9 @@ func AvaliaInstrucao(instrucao arv.Instrucao, ambiente *obj.Ambiente) *obj.Statu
 		res := AvaliaExpressao(no.Expre, ambiente)
 
 		return status(obj.ERROR,&obj.ObjExcessao{Mensagem: "Exeção: " + res.Inspecionar(), Objeto: res})
+	
+	case *arv.InstrucaoTryExcept:
+		return avaliaTryExcept(no,ambiente);
 
 	case *arv.VarInstrucao:
 		for _, vardec := range no.Vars {

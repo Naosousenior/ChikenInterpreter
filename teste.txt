@@ -1,5 +1,14 @@
 
+verifica = fn(num) {
+    try{
+        if(num<0) {
+            err 'numero negativo';
+        }
 
-iter(num -> cria_array(0,100)) {
-    bff.write(num,'-');
-}
+        return true;
+    } except e {
+
+        bff.write('sla');
+        bff.write('tnc rapz');
+    }
+};

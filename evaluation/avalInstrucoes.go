@@ -179,3 +179,19 @@ func avaliaSwitch(noSwitch *arv.InstrucaoSwitch, ambiente *obj.Ambiente) *obj.St
 
 	return avaliaInstrucoes(blocoCodigo.Instrucoes,ambiente)
 }
+
+func avaliaTryExcept(noTry *arv.InstrucaoTryExcept,ambiente *obj.Ambiente) *obj.Status {
+	novoAmb := obj.NewAmbienteInterno(ambiente)
+
+	stts_result := avaliaInstrucoes(noTry.BlocoTry.Instrucoes,novoAmb)
+
+	if stts_result.Tipo == obj.ERROR {
+		obj_exce := stts_result.Resultado
+		ambExcept := obj.NewAmbienteInterno(ambiente)
+		ambExcept.AddArgs(noTry.ExcessaoVar,obj_exce)
+
+		return avaliaInstrucoes(noTry.BlocoExcept.Instrucoes,ambExcept)
+	}
+
+	return stts_result
+}
